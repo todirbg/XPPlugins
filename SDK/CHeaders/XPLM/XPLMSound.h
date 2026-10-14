@@ -2,7 +2,7 @@
 #define _XPLMSound_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -19,16 +19,27 @@
  *
  */
 
+
 #include "XPLMDefs.h"
+
+#if defined(XPLM) || defined(SIM)
+#include "fmod.hpp"
+#endif				// XPLM|SIM
+
+#if defined(XPLM) || defined(SIM)
+#include "fmod_studio.hpp"
+#endif				// XPLM|SIM
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 #if defined(XPLM400)
 /***************************************************************************
  * FMOD ACCESS
  ***************************************************************************/
+
 
 /*
  * XPLMAudioBus
@@ -37,34 +48,46 @@ extern "C" {
  * part of the simulated environment that the audio belongs in. If you use
  * FMOD directly, note that COM1, COM2, Pilot and GND exist in a different
  * FMOD bank so you may see these channels being unloaded/reloaded
- * independently of the others.
+ * independently of the others. They may also be using a different
+ * FMOD::System if the user has selected a dedicated headset output device.
  *
  */
 enum {
+
     /* Incoming speech on COM1                                                    */
     xplm_AudioRadioCom1                      = 0,
+
 
     /* Incoming speech on COM2                                                    */
     xplm_AudioRadioCom2                      = 1,
 
+
     /* Pilot's own speech                                                         */
     xplm_AudioRadioPilot                     = 2,
+
 
     /* Copilot's own speech                                                       */
     xplm_AudioRadioCopilot                   = 3,
 
+
     xplm_AudioExteriorAircraft               = 4,
+
 
     xplm_AudioExteriorEnvironment            = 5,
 
+
     xplm_AudioExteriorUnprocessed            = 6,
+
 
     xplm_AudioInterior                       = 7,
 
+
     xplm_AudioUI                             = 8,
+
 
     /* Dedicated ground vehicle cable                                             */
     xplm_AudioGround                         = 9,
+
 
     /* Master bus. Not normally to be used directly.                              */
     xplm_Master                              = 10,
@@ -81,8 +104,10 @@ typedef int XPLMAudioBus;
  *
  */
 enum {
+
     /* Master bank. Handles all aircraft and environmental audio.                 */
     xplm_MasterBank                          = 0,
+
 
     /* Radio bank. Handles COM1/COM2/GND/Pilot/Copilot.                           */
     xplm_RadioBank                           = 1,
@@ -92,6 +117,7 @@ enum {
 typedef int XPLMBankID;
 
 
+	 
 /* 
  * If you want to get full access to FMOD sound features, you need to include fmod.h or fmod.hpp yourself FIRST.
  * If you only need the basic wrapper functions which allow 3D placement and playback on a specified channel, there
@@ -100,25 +126,38 @@ typedef int XPLMBankID;
  * within the functions of the X-Plane SDK.
  *
  * If you choose to use the advanced method, be aware that it is your responsibility to ensure that any resources,
- * especially callbacks, are cleaned up when needed. The sound system may well be completely rebuild when the master 
+ * especially callbacks, are cleaned up when needed. The sound system may well be completely rebuilt when the master 
  * banks are reloaded, when aircraft are reloaded, or your plugin is unloaded.
  *
  * IMPORTANT: For all calls which use, or return, FMOD base types like FMOD_Studio_System*, these are fully interchangeable
  *            with their C++ equivalents. See https://www.fmod.com/docs/2.02/api/white-papers-handle-system.html .
- */
-#if defined(_FMOD_COMMON_H)
+ *
+ * Stub definitions are enough to play a basic sound without linking to the full FMOD distribution. You can still position it in 3D
+ * and change other basic parameters. In all cases where an FMOD_RESULT is returned, the full range of FMOD_RESULT codes are used - the
+ * status will in almost all situations be coming straight from FMOD - so the single definition here is purely to create a matching
+ * datatype and allow simple "is OK" and "is not OK" tests.
 
+ */
+
+#if defined(_FMOD_COMMON_H)
 /*
  * XPLMGetFMODStudio
  * 
  * Get a handle to the FMOD Studio, allowing you to load/process whatever else
  * you need. This also gives access to the underlying system via
  * FMOD::Studio::System::getCoreSystem() / FMOD_Studio_System_GetCoreSystem()
- * .
+ * . When a separate output device is being used for the radio, this will
+ * always return the FMOD::Studio that is running the environment output, as
+ * before. If you want to specifically target the headset output device, you
+ * can obtain that FMOD::Studio by getting one of the radio-specific output
+ * channelgroups and using the getSystem() call on that.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_STUDIO_SYSTEM* XPLMGetFMODStudio(void);
+#endif				// _FMOD_COMMON_H
 
+#if defined(_FMOD_COMMON_H)
 /*
  * XPLMGetFMODChannelGroup
  * 
@@ -126,43 +165,72 @@ XPLM_API FMOD_STUDIO_SYSTEM* XPLMGetFMODStudio(void);
  * See the table above for values.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_CHANNELGROUP* XPLMGetFMODChannelGroup(
                          XPLMAudioBus         audioType);
+#endif				// _FMOD_COMMON_H
 
-
-#else
+#if !defined(_FMOD_COMMON_H)
 /*
- * These definitions are enough to play a basic sound without linking to the full FMOD distribution. You can still position it in 3D
- * and change other basic parameters. In all cases where an FMOD_RESULT is returned, the full range of FMOD_RESULT codes are used - the
- * status will in almost all situations be coming straight from FMOD - so the single definition here is purely to create a matching
- * datatype and allow simple "is OK" and "is not OK" tests.
-*/
+ * FMOD_RESULT
+ *
+ */
+enum {
 
-typedef enum FMOD_RESULT
-{
-    FMOD_OK,
-} FMOD_RESULT;
-typedef enum FMOD_SOUND_FORMAT
-{
-	FMOD_SOUND_FORMAT_PCM16 = 2
-} FMOD_SOUND_FORMAT;
-typedef struct FMOD_VECTOR
-{
-	float x, y, z;
-} FMOD_VECTOR;
+    FMOD_OK                                  = 0,
+
+
+};
+typedef int FMOD_RESULT;
+#endif				// _FMOD_COMMON_H
+
+#if !defined(_FMOD_COMMON_H)
+/*
+ * FMOD_SOUND_FORMAT
+ *
+ */
+enum {
+
+    FMOD_SOUND_FORMAT_PCM16                  = 2,
+
+
+};
+typedef int FMOD_SOUND_FORMAT;
+#endif				// _FMOD_COMMON_H
+
+#if !defined(_FMOD_COMMON_H)
+/*
+ * FMOD_CHANNEL
+ *
+ */
 typedef void FMOD_CHANNEL;
-#endif
+#endif				// _FMOD_COMMON_H
+
+#if !defined(_FMOD_COMMON_H)
+/*
+ * FMOD_VECTOR
+ *
+ */
+typedef struct {
+
+     float                     x;
+
+     float                     y;
+
+     float                     z;
+} FMOD_VECTOR;
+#endif				// _FMOD_COMMON_H
 
 /*
  * XPLMPCMComplete_f
  * 
  * If you use XPLMPlayPCMOnBus() you may use this optional callback to find
  * out when the FMOD::Channel is complete, if you need to deallocate memory
- * for example.
+ * for example. It will not be called more than once per completion.
  *
  */
 typedef void (* XPLMPCMComplete_f)(
-                         void *               inRefcon,
+                         void*                inRefcon,
                          FMOD_RESULT          status);
 
 /*
@@ -178,21 +246,22 @@ typedef void (* XPLMPCMComplete_f)(
  * instantly. Instead, it will be started the next time X-Plane refreshes the
  * sound system, typically at the start of the next frame. This allows you to
  * set the initial position for the sound, if required. The callback will be
- * called on the same thread as the sound is created from, and will be called
- * only once per sound. If the call fails and you provide a callback function,
- * you will get a callback with an FMOD status code.
+ * called on the main thread, and will be called only once per sound. If the
+ * call fails and you provide a callback function, you will get a callback
+ * with an FMOD status code.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_CHANNEL* XPLMPlayPCMOnBus(
-                         void *               audioBuffer,
-                         uint32_t             bufferSize,
+                         void*                audioBuffer,
+                         int                  bufferSize,
                          FMOD_SOUND_FORMAT    soundFormat,
                          int                  freqHz,
                          int                  numChannels,
                          int                  loop,
                          XPLMAudioBus         audioType,
-                         XPLMPCMComplete_f    inCallback,
-                         void *               inRefcon);              /* Can be NULL */
+                         XPLMPCMComplete_f    inCallback,             /* Can be NULL */
+                         void*                inRefcon);
 
 /*
  * XPLMStopAudio
@@ -202,6 +271,7 @@ XPLM_API FMOD_CHANNEL* XPLMPlayPCMOnBus(
  * and must not be used in any future calls.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_RESULT XPLMStopAudio(
                          FMOD_CHANNEL*        fmod_channel);
 
@@ -212,6 +282,7 @@ XPLM_API FMOD_RESULT XPLMStopAudio(
  * in local co-ordinates. This will set the sound to 3D if it is not already.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_RESULT XPLMSetAudioPosition(
                          FMOD_CHANNEL*        fmod_channel,
                          FMOD_VECTOR*         position,
@@ -228,6 +299,7 @@ XPLM_API FMOD_RESULT XPLMSetAudioPosition(
  * max.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_RESULT XPLMSetAudioFadeDistance(
                          FMOD_CHANNEL*        fmod_channel,
                          float                min_fade_distance,
@@ -242,6 +314,7 @@ XPLM_API FMOD_RESULT XPLMSetAudioFadeDistance(
  * a sound.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_RESULT XPLMSetAudioVolume(
                          FMOD_CHANNEL*        fmod_channel,
                          float                source_volume);
@@ -252,6 +325,7 @@ XPLM_API FMOD_RESULT XPLMSetAudioVolume(
  * Change the current pitch of an active FMOD channel.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_RESULT XPLMSetAudioPitch(
                          FMOD_CHANNEL*        fmod_channel,
                          float                audio_pitch_hz);
@@ -264,13 +338,13 @@ XPLM_API FMOD_RESULT XPLMSetAudioPitch(
  * already.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API FMOD_RESULT XPLMSetAudioCone(
                          FMOD_CHANNEL*        fmod_channel,
                          float                inside_angle,
                          float                outside_angle,
                          float                outside_volume,
                          FMOD_VECTOR*         orientation);
-
 #endif /* XPLM400 */
 #ifdef __cplusplus
 }

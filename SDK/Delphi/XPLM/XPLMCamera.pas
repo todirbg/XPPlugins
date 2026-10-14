@@ -1,5 +1,5 @@
 {
-   Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+   Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
    rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
 }
 
@@ -42,6 +42,22 @@ INTERFACE
 USES
     XPLMDefs;
    {$A4}
+
+TYPE
+   XPLMChar   = AnsiChar;
+   XPLMString = PAnsiChar;
+   PXPLMString = ^XPLMString;
+
+CONST
+{$IFDEF MSWINDOWS}
+   XPLM_DLL = 'XPLM_64.dll';
+{$ENDIF}
+{$IFDEF DARWIN}
+   XPLM_DLL = 'XPLM.framework/XPLM';
+{$ENDIF}
+{$IFDEF LINUX}
+   XPLM_DLL = 'XPLM_64.so';
+{$ENDIF}
 {___________________________________________________________________________
  * CAMERA CONTROL
  ___________________________________________________________________________}
@@ -90,18 +106,18 @@ TYPE
     
     You use an XPLMCameraControl function to provide continuous control over
     the camera. You are passed a structure in which to put the new camera
-    position; modify it and return 1 to reposition the camera. Return 0 to
-    surrender control of the camera; camera control will be handled by X-Plane
-    on this draw loop. The contents of the structure as you are called are
-    undefined.
+    position; modify it and return true to reposition the camera. Return false
+    to surrender control of the camera; camera control will be handled by
+    X-Plane on this draw loop. The contents of the structure as you are called
+    are undefined.
     
     If X-Plane is taking camera control away from you, this function will be
-    called with inIsLosingControl set to 1 and ioCameraPosition NULL.
+    called with inIsLosingControl set to true and ioCameraPosition NULL.
    }
      XPLMCameraControl_f = FUNCTION(
                                     outCameraPosition   : PXPLMCameraPosition_t;    { Can be nil }
                                     inIsLosingControl   : Integer;
-                                    inRefcon            : pointer) : Integer; cdecl;
+                                    inRefcon            : pointer) : Integer; cdecl;    { Can be nil }
 
    {
     XPLMControlCamera
@@ -110,10 +126,11 @@ TYPE
     pass a non-null control function. Specify in inHowLong how long you'd like
     control (indefinitely or until a new view mode is set by the user).
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMControlCamera(
                                         inHowLong           : XPLMCameraControlDuration;
                                         inControlFunc       : XPLMCameraControl_f;
-                                        inRefcon            : pointer);
+                                        inRefcon            : pointer);    { Can be nil }
     cdecl; external XPLM_DLL;
 
    {
@@ -126,16 +143,18 @@ TYPE
     For maximum compatibility you should not use this routine unless you are in
     posession of the camera.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDontControlCamera;
     cdecl; external XPLM_DLL;
 
    {
     XPLMIsCameraBeingControlled
     
-    This routine returns 1 if the camera is being controlled, zero if it is
+    This routine returns true if the camera is being controlled, false if it is
     not. If it is and you pass in a pointer to a camera control duration, the
     current control duration will be returned.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMIsCameraBeingControlled(
                                         outCameraControlDuration: PXPLMCameraControlDuration) : Integer;    { Can be nil }
     cdecl; external XPLM_DLL;
@@ -145,9 +164,18 @@ TYPE
     
     This function reads the current camera position.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMReadCameraPosition(
                                         outCameraPosition   : PXPLMCameraPosition_t);
     cdecl; external XPLM_DLL;
+
+{___________________________________________________________________________
+ * Host API
+ ___________________________________________________________________________}
+
+CONST
+   XPLMCameraHostApiVersion = 0;
+
 
 
 IMPLEMENTATION

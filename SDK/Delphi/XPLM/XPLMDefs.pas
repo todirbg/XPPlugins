@@ -1,5 +1,5 @@
 {
-   Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+   Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
    rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
 }
 
@@ -18,6 +18,22 @@ INTERFACE
 }
 
    {$A4}
+
+TYPE
+   XPLMChar   = AnsiChar;
+   XPLMString = PAnsiChar;
+   PXPLMString = ^XPLMString;
+
+CONST
+{$IFDEF MSWINDOWS}
+   XPLM_DLL = 'XPLM_64.dll';
+{$ENDIF}
+{$IFDEF DARWIN}
+   XPLM_DLL = 'XPLM.framework/XPLM';
+{$ENDIF}
+{$IFDEF LINUX}
+   XPLM_DLL = 'XPLM_64.so';
+{$ENDIF}
 {$IFDEF LINUX}
    {$DEFINE KYLIX}
 {$ENDIF}
@@ -74,16 +90,6 @@ TYPE
    XPLMPluginID = Integer;
    PXPLMPluginID = ^XPLMPluginID;
 
-CONST
-    { No plugin.                                                                 }
-   XPLM_NO_PLUGIN_ID    = (-1);
-
-    { X-Plane itself                                                             }
-   XPLM_PLUGIN_XPLANE   = (0);
-
-    { The current XPLM revision is 4.00 (400).                                   }
-   kXPLM_Version        = (400);
-
    {
     XPLMKeyFlags
     
@@ -99,8 +105,13 @@ CONST
     necessarily match the Macintosh user interface guidelines.  There is not
     yet a way for plugins to access the Macintosh control keys without using
     #ifdefed code.
+    
+    The down and up flags describe the phase of a key *event* and are only
+    meaningful when these flags arrive with a keystroke.  When you poll the
+    live modifier state with XPLMGetModifierKeys(), only the modifier bits
+    (shift, option/alt, command/control, caps lock) are ever set --- the
+    down/up flags are never returned by that call.
    }
-TYPE
    XPLMKeyFlags = (
      { The shift key is down                                                      }
       xplm_ShiftFlag                           = 1
@@ -117,8 +128,190 @@ TYPE
      { The key is being released                                                  }
      ,xplm_UpFlag                              = 16
  
+{$IFDEF XPLM440}
+     { The caps lock key is engaged.  Only reported by XPLMGetModifierKeys();     }
+     { never set on a key event.                                                  }
+     ,xplm_CapsLockFlag                        = 32
+{$ENDIF XPLM440}
+ 
    );
    PXPLMKeyFlags = ^XPLMKeyFlags;
+
+{$IFDEF XPLM200}
+   {
+    XPLMCursorStatus
+    
+    XPLMCursorStatus describes how you would like X-Plane to manage the cursor.
+    See XPLMHandleCursor_f for more info.
+   }
+TYPE
+   XPLMCursorStatus = (
+     { X-Plane manages the cursor normally, plugin does not affect the cusrsor.   }
+      xplm_CursorDefault                       = 0
+ 
+     { X-Plane hides the cursor.                                                  }
+     ,xplm_CursorHidden                        = 1
+ 
+     { X-Plane shows the cursor as the default arrow.                             }
+     ,xplm_CursorArrow                         = 2
+ 
+     { X-Plane shows the cursor but lets you select an OS cursor.                 }
+     ,xplm_CursorCustom                        = 3
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a small bi-directional knob-rotating cursor.                 }
+     ,xplm_CursorRotateSmall                   = 4
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a small counter-clockwise knob-rotating cursor.              }
+     ,xplm_CursorRotateSmallLeft               = 5
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a small clockwise knob-rotating cursor.                      }
+     ,xplm_CursorRotateSmallRight              = 6
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a medium bi-directional knob-rotating cursor.                }
+     ,xplm_CursorRotateMedium                  = 7
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a medium counter-clockwise knob-rotating cursor.             }
+     ,xplm_CursorRotateMediumLeft              = 8
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a medium clockwise knob-rotating cursor.                     }
+     ,xplm_CursorRotateMediumRight             = 9
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a large bi-directional knob-rotating cursor.                 }
+     ,xplm_CursorRotateLarge                   = 10
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a large counter-clockwise knob-rotating cursor.              }
+     ,xplm_CursorRotateLargeLeft               = 11
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a large clockwise knob-rotating cursor.                      }
+     ,xplm_CursorRotateLargeRight              = 12
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows an up-and-down arrows cursor.                                }
+     ,xplm_CursorUpDown                        = 13
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a down arrow cursor.                                         }
+     ,xplm_CursorDown                          = 14
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows an up arrow cursor.                                          }
+     ,xplm_CursorUp                            = 15
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a left-right arrow cursor.                                   }
+     ,xplm_CursorLeftRight                     = 16
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a left arrow cursor.                                         }
+     ,xplm_CursorLeft                          = 17
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a right arrow cursor.                                        }
+     ,xplm_CursorRight                         = 18
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a button-pushing cursor.                                     }
+     ,xplm_CursorButton                        = 19
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a handle-grabbing cursor.                                    }
+     ,xplm_CursorHandle                        = 20
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a four-arrows cursor.                                        }
+     ,xplm_CursorFourArrows                    = 21
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a cursor to drag a horizontal splitter bar.                  }
+     ,xplm_CursorSplitterH                     = 22
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows a cursor to drag a vertical splitter bar.                    }
+     ,xplm_CursorSplitterV                     = 23
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { X-Plane shows an I-Beam cursor for text editing.                           }
+     ,xplm_CursorText                          = 24
+{$ENDIF XPLM420}
+ 
+   );
+   PXPLMCursorStatus = ^XPLMCursorStatus;
+{$ENDIF XPLM200}
+
+   {
+    XPLMMouseStatus
+    
+                    When the mouse is clicked, your mouse click routine is
+                    called repeatedly.  It is first called with the mouse down
+                    message.  It is then called zero or more times with the
+                    mouse-drag message, and finally it is called once with the
+                    mouse up message.  All of these messages will be directed
+                    to the same window; you are guaranteed to not receive a
+                    drag or mouse-up event without first receiving the
+                    corresponding mouse-down.
+   }
+TYPE
+   XPLMMouseStatus = (
+      xplm_MouseDown                           = 1
+ 
+     ,xplm_MouseDrag                           = 2
+ 
+     ,xplm_MouseUp                             = 3
+ 
+   );
+   PXPLMMouseStatus = ^XPLMMouseStatus;
+
+CONST
+    { No plugin.                                                                 }
+   XPLM_NO_PLUGIN_ID    = (-1);
+
+    { X-Plane itself                                                             }
+   XPLM_PLUGIN_XPLANE   = (0);
+
+    {                 The current XPLM revision is 4.4.0 (440).                  }
+   kXPLM_Version        = (440);
+
+   {
+    XPLMFixedString150_t
+    
+                    A container for a fixed-size string buffer of 150
+                    characters.
+   }
+TYPE
+   XPLMFixedString150_t = RECORD
+     { The size of the struct.                                                    }
+     buffer                   : array[0..150 - 1] of XPLMChar;
+   END;
+   PXPLMFixedString150_t = ^XPLMFixedString150_t;
 
 {___________________________________________________________________________
  * ASCII CONTROL KEY CODES
@@ -433,17 +626,6 @@ CONST
 
    XPLM_VK_NUMPAD_EQ    = $BD;
 
-   {
-    XPLMFixedString150_t
-    
-    A container for a fixed-size string buffer of 150 characters.
-   }
-TYPE
-   XPLMFixedString150_t = RECORD
-     { The size of the struct.                                                    }
-     buffer[150]              : XPLMChar;
-   END;
-   PXPLMFixedString150_t = ^XPLMFixedString150_t;
 
 IMPLEMENTATION
 

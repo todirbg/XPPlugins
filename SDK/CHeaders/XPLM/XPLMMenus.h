@@ -2,7 +2,7 @@
 #define _XPLMMenus_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -40,16 +40,20 @@
  *
  */
 
+
 #include "XPLMDefs.h"
+
 #include "XPLMUtilities.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 /***************************************************************************
  * XPLM MENUS
  ***************************************************************************/
+
 
 /*
  * XPLMMenuCheck
@@ -60,11 +64,14 @@ extern "C" {
  *
  */
 enum {
+
     /* There is no symbol to the left of the menu item.                           */
     xplm_Menu_NoCheck                        = 0,
 
+
     /* The menu has a mark next to it that is unmarked (not lit).                 */
     xplm_Menu_Unchecked                      = 1,
+
 
     /* The menu has a mark next to it that is checked (lit).                      */
     xplm_Menu_Checked                        = 2,
@@ -90,8 +97,8 @@ typedef void * XPLMMenuID;
  *
  */
 typedef void (* XPLMMenuHandler_f)(
-                         void *               inMenuRef,
-                         void *               inItemRef);
+                         void*                inMenuRef,
+                         void*                inItemRef);
 
 /*
  * XPLMFindPluginsMenu
@@ -100,6 +107,7 @@ typedef void (* XPLMMenuHandler_f)(
  * at startup.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API XPLMMenuID XPLMFindPluginsMenu(void);
 
 #if defined(XPLM300)
@@ -118,6 +126,7 @@ XPLM_API XPLMMenuID XPLMFindPluginsMenu(void);
  * attempts to add menu items to it will fail.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API XPLMMenuID XPLMFindAircraftMenu(void);
 #endif /* XPLM300 */
 
@@ -136,12 +145,13 @@ XPLM_API XPLMMenuID XPLMFindAircraftMenu(void);
  * a submenu where the title is not visible.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API XPLMMenuID XPLMCreateMenu(
                          const char *         inName,
                          XPLMMenuID           inParentMenu,
                          int                  inParentItem,
-                         XPLMMenuHandler_f    inHandler,
-                         void *               inMenuRef);
+                         XPLMMenuHandler_f    inHandler,              /* Can be NULL */
+                         void*                inMenuRef);
 
 /*
  * XPLMDestroyMenu
@@ -150,6 +160,7 @@ XPLM_API XPLMMenuID XPLMCreateMenu(
  * submenu if necessary.  (Normally this function will not be necessary.)
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMDestroyMenu(
                          XPLMMenuID           inMenuID);
 
@@ -160,6 +171,7 @@ XPLM_API void       XPLMDestroyMenu(
  * it.  Use this function if you need to change the number of items on a menu.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMClearAllMenuItems(
                          XPLMMenuID           inMenuID);
 
@@ -182,10 +194,11 @@ XPLM_API void       XPLMClearAllMenuItems(
  * plugin.)
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API int        XPLMAppendMenuItem(
                          XPLMMenuID           inMenu,
                          const char *         inItemName,
-                         void *               inItemRef,
+                         void*                inItemRef,
                          int                  inDeprecatedAndIgnored);
 
 #if defined(XPLM300)
@@ -205,6 +218,7 @@ XPLM_API int        XPLMAppendMenuItem(
  * menus only.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API int        XPLMAppendMenuItemWithCommand(
                          XPLMMenuID           inMenu,
                          const char *         inItemName,
@@ -215,11 +229,9 @@ XPLM_API int        XPLMAppendMenuItemWithCommand(
  * XPLMAppendMenuSeparator
  * 
  * This routine adds a separator to the end of a menu.
- * 
- * Returns a negative index if the append failed (due to an invalid parent
- * menu argument).
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMAppendMenuSeparator(
                          XPLMMenuID           inMenu);
 
@@ -230,6 +242,7 @@ XPLM_API void       XPLMAppendMenuSeparator(
  * ID and the index of the menu item.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMSetMenuItemName(
                          XPLMMenuID           inMenu,
                          int                  inIndex,
@@ -242,6 +255,7 @@ XPLM_API void       XPLMSetMenuItemName(
  * Set whether a menu item is checked.  Pass in the menu ID and item index.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMCheckMenuItem(
                          XPLMMenuID           inMenu,
                          int                  index,
@@ -254,6 +268,7 @@ XPLM_API void       XPLMCheckMenuItem(
  * check mark may be on or off, or a menu may not have an icon at all.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMCheckMenuItemState(
                          XPLMMenuID           inMenu,
                          int                  index,
@@ -265,6 +280,7 @@ XPLM_API void       XPLMCheckMenuItemState(
  * Sets whether this menu item is enabled.  Items start out enabled.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMEnableMenuItem(
                          XPLMMenuID           inMenu,
                          int                  index,
@@ -278,11 +294,11 @@ XPLM_API void       XPLMEnableMenuItem(
  * one; your plugin must track the change in index numbers.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMRemoveMenuItem(
                          XPLMMenuID           inMenu,
                          int                  inIndex);
 #endif /* XPLM210 */
-
 #ifdef __cplusplus
 }
 #endif

@@ -56,6 +56,7 @@ int ini_setf(const char *name, float val);
 float ini_getf(const char *name, float def);
 void ini_gets(const char *name, char *buf, int size, const char *def);
 int ini_sets(const char *name, const char *val);
+int ini_write_default(const char *contents);
 
 /* log */
 void _log(const char *fmt, ...);

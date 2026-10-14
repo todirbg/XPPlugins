@@ -2,7 +2,7 @@
 #define _XPLMGraphics_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -42,11 +42,64 @@
  *
  */
 
+
 #include "XPLMDefs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+/***************************************************************************
+ * X-PLANE COORDINATES
+ ***************************************************************************/
+/*
+ *             These routines allow you to use OpenGL with X-Plane.
+ *
+ */
+
+
+/*
+ * XPLMWorldToLocal
+ * 
+ *                 This routine translates coordinates from latitude,
+ *                 longitude, and altitude to local scene coordinates.
+ *                 Latitude and longitude are in decimal degrees, and altitude
+ *                 is in meters MSL (mean sea level).  The XYZ coordinates are
+ *                 in meters in the local OpenGL coordinate system.
+ *
+ */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
+XPLM_API void       XPLMWorldToLocal(
+                         double               inLatitude,
+                         double               inLongitude,
+                         double               inAltitude,
+                         double *             outX,
+                         double *             outY,
+                         double *             outZ);
+
+/*
+ * XPLMLocalToWorld
+ * 
+ *                 This routine translates a local coordinate triplet back
+ *                 into latitude, longitude, and altitude.  Latitude and
+ *                 longitude are in decimal degrees, and altitude is in meters
+ *                 MSL (mean sea level).  The XYZ coordinates are in meters in
+ *                 the local OpenGL coordinate system.
+ * 
+ *                 NOTE: world coordinates are less precise than local
+ *                 coordinates; you should try to avoid round tripping from
+ *                 local to world and back.
+ *
+ */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
+XPLM_API void       XPLMLocalToWorld(
+                         double               inX,
+                         double               inY,
+                         double               inZ,
+                         double *             outLatitude,
+                         double *             outLongitude,
+                         double *             outAltitude);
 
 /***************************************************************************
  * X-PLANE GRAPHICS
@@ -69,19 +122,36 @@ extern "C" {
  *
  */
 enum {
+
     /* The bitmap that contains window outlines, button outlines, fonts, etc.     */
     xplm_Tex_GeneralInterface                = 0,
+
 
 #if defined(XPLM_DEPRECATED)
     /* The exterior paint for the user's aircraft (daytime).                      */
     xplm_Tex_AircraftPaint                   = 1,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* The exterior light map for the user's aircraft.                            */
     xplm_Tex_AircraftLiteMap                 = 2,
 
 #endif /* XPLM_DEPRECATED */
+
+#if defined(XPLM420)
+    /* The weather radar instrument texture as controlled by the pilot-side radar *
+     * controls                                                                   */
+    xplm_Tex_Radar_Pilot                     = 3,
+
+#endif /* XPLM420 */
+
+#if defined(XPLM420)
+    /* The weather radar instrument texture as controlled by the copilot-side     *
+     * radar controls                                                             */
+    xplm_Tex_Radar_Copilot                   = 4,
+
+#endif /* XPLM420 */
 
 };
 typedef int XPLMTextureID;
@@ -134,6 +204,7 @@ typedef int XPLMTextureID;
  *  XPLMSetGraphicsState should have no fog or lighting.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMSetGraphicsState(
                          int                  inEnableFog,
                          int                  inNumberTexUnits,
@@ -161,6 +232,7 @@ XPLM_API void       XPLMSetGraphicsState(
  * Use this routine instead of glBindTexture(GL_TEXTURE_2D, ....);
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMBindTexture2d(
                          int                  inTextureNum,
                          int                  inTextureUnit);
@@ -173,59 +245,22 @@ XPLM_API void       XPLMBindTexture2d(
  * that X-Plane is reserving for its own use.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMGenerateTextureNumbers(
                          int *                outTextureIDs,
                          int                  inCount);
 
-#if defined(XPLM_DEPRECATED)
 /*
  * XPLMGetTexture
  * 
  * XPLMGetTexture returns the OpenGL texture ID of an X-Plane texture based on
  * a generic identifying code.  For example, you can get the texture for
- * X-Plane's UI bitmaps.
+ * X-Plane's  weather radar.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API int        XPLMGetTexture(
                          XPLMTextureID        inTexture);
-#endif /* XPLM_DEPRECATED */
-
-/*
- * XPLMWorldToLocal
- * 
- * This routine translates coordinates from latitude, longitude, and altitude
- * to local scene coordinates. Latitude and longitude are in decimal degrees,
- * and altitude is in meters MSL (mean sea level).  The XYZ coordinates are in
- * meters in the local OpenGL coordinate system.
- *
- */
-XPLM_API void       XPLMWorldToLocal(
-                         double               inLatitude,
-                         double               inLongitude,
-                         double               inAltitude,
-                         double *             outX,
-                         double *             outY,
-                         double *             outZ);
-
-/*
- * XPLMLocalToWorld
- * 
- * This routine translates a local coordinate triplet back into latitude,
- * longitude, and altitude.  Latitude and longitude are in decimal degrees,
- * and altitude is in meters MSL (mean sea level).  The XYZ coordinates are in
- * meters in the local OpenGL coordinate system.
- * 
- * NOTE: world coordinates are less precise than local coordinates; you should
- * try to avoid round tripping from local to world and back.
- *
- */
-XPLM_API void       XPLMLocalToWorld(
-                         double               inX,
-                         double               inY,
-                         double               inZ,
-                         double *             outLatitude,
-                         double *             outLongitude,
-                         double *             outAltitude);
 
 /*
  * XPLMDrawTranslucentDarkBox
@@ -235,6 +270,7 @@ XPLM_API void       XPLMLocalToWorld(
  * used by X-Plane to show text files.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMDrawTranslucentDarkBox(
                          int                  inLeft,
                          int                  inTop,
@@ -244,6 +280,7 @@ XPLM_API void       XPLMDrawTranslucentDarkBox(
 /***************************************************************************
  * X-PLANE TEXT
  ***************************************************************************/
+
 
 /*
  * XPLMFontID
@@ -261,94 +298,113 @@ XPLM_API void       XPLMDrawTranslucentDarkBox(
  *
  */
 enum {
+
     /* Mono-spaced font for user interface.  Available in all versions of the SDK.*/
     xplmFont_Basic                           = 0,
+
 
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_Menus                           = 1,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_Metal                           = 2,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_Led                             = 3,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_LedWide                         = 4,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_PanelHUD                        = 5,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_PanelEFIS                       = 6,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_PanelGPS                        = 7,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_RadiosGA                        = 8,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_RadiosBC                        = 9,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_RadiosHM                        = 10,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_RadiosGANarrow                  = 11,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_RadiosBCNarrow                  = 12,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_RadiosHMNarrow                  = 13,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_Timer                           = 14,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_FullRound                       = 15,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_SmallRound                      = 16,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM_DEPRECATED)
     /* Deprecated, do not use.                                                    */
     xplmFont_Menus_Localized                 = 17,
 
 #endif /* XPLM_DEPRECATED */
+
 #if defined(XPLM200)
     /* Proportional UI font.                                                      */
     xplmFont_Proportional                    = 18,
@@ -369,11 +425,12 @@ typedef int XPLMFontID;
  * to 1.0.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMDrawString(
-                         float *              inColorRGB,
+                         float                inColorRGB[3],
                          int                  inXOffset,
                          int                  inYOffset,
-                         char *               inChar,
+                         const char *         inChar,
                          int *                inWordWrapWidth,        /* Can be NULL */
                          XPLMFontID           inFontID);
 
@@ -388,8 +445,9 @@ XPLM_API void       XPLMDrawString(
  * string drawn.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMDrawNumber(
-                         float *              inColorRGB,
+                         float                inColorRGB[3],
                          int                  inXOffset,
                          int                  inYOffset,
                          double               inValue,
@@ -407,6 +465,7 @@ XPLM_API void       XPLMDrawNumber(
  * will be an arbitrary, hopefully average width.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMGetFontDimensions(
                          XPLMFontID           inFontID,
                          int *                outCharWidth,           /* Can be NULL */
@@ -424,12 +483,12 @@ XPLM_API void       XPLMGetFontDimensions(
  * for fractional pixels.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API float      XPLMMeasureString(
                          XPLMFontID           inFontID,
                          const char *         inChar,
                          int                  inNumChars);
 #endif /* XPLM200 */
-
 #ifdef __cplusplus
 }
 #endif

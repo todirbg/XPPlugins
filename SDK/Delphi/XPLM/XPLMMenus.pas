@@ -1,5 +1,5 @@
 {
-   Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+   Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
    rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
 }
 
@@ -37,6 +37,22 @@ INTERFACE
 USES
     XPLMDefs, XPLMUtilities;
    {$A4}
+
+TYPE
+   XPLMChar   = AnsiChar;
+   XPLMString = PAnsiChar;
+   PXPLMString = ^XPLMString;
+
+CONST
+{$IFDEF MSWINDOWS}
+   XPLM_DLL = 'XPLM_64.dll';
+{$ENDIF}
+{$IFDEF DARWIN}
+   XPLM_DLL = 'XPLM.framework/XPLM';
+{$ENDIF}
+{$IFDEF LINUX}
+   XPLM_DLL = 'XPLM_64.so';
+{$ENDIF}
 {___________________________________________________________________________
  * XPLM MENUS
  ___________________________________________________________________________}
@@ -78,8 +94,8 @@ TYPE
     the item was created).
    }
      XPLMMenuHandler_f = PROCEDURE(
-                                    inMenuRef           : pointer;
-                                    inItemRef           : pointer); cdecl;
+                                    inMenuRef           : pointer;    { Can be nil }
+                                    inItemRef           : pointer); cdecl;    { Can be nil }
 
    {
     XPLMFindPluginsMenu
@@ -87,6 +103,7 @@ TYPE
     This function returns the ID of the plug-ins menu, which is created for you
     at startup.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMFindPluginsMenu: XPLMMenuID;
     cdecl; external XPLM_DLL;
 
@@ -105,6 +122,7 @@ TYPE
     the aircraft menu. For all other plugins, this will return NULL, and any
     attempts to add menu items to it will fail.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMFindAircraftMenu: XPLMMenuID;
     cdecl; external XPLM_DLL;
 {$ENDIF XPLM300}
@@ -123,12 +141,13 @@ TYPE
     Important: you must pass a valid, non-empty menu title even if the menu is
     a submenu where the title is not visible.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMCreateMenu(
                                         inName              : XPLMString;
                                         inParentMenu        : XPLMMenuID;
                                         inParentItem        : Integer;
-                                        inHandler           : XPLMMenuHandler_f;
-                                        inMenuRef           : pointer) : XPLMMenuID;
+                                        inHandler           : XPLMMenuHandler_f;    { Can be nil }
+                                        inMenuRef           : pointer) : XPLMMenuID;    { Can be nil }
     cdecl; external XPLM_DLL;
 
    {
@@ -137,6 +156,7 @@ TYPE
     This function destroys a menu that you have created.  Use this to remove a
     submenu if necessary.  (Normally this function will not be necessary.)
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDestroyMenu(
                                         inMenuID            : XPLMMenuID);
     cdecl; external XPLM_DLL;
@@ -147,6 +167,7 @@ TYPE
     This function removes all menu items from a menu, allowing you to rebuild
     it.  Use this function if you need to change the number of items on a menu.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMClearAllMenuItems(
                                         inMenuID            : XPLMMenuID);
     cdecl; external XPLM_DLL;
@@ -169,10 +190,11 @@ TYPE
     are irrelevant to your plugin in order to deliver this consistency for each
     plugin.)
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMAppendMenuItem(
                                         inMenu              : XPLMMenuID;
                                         inItemName          : XPLMString;
-                                        inItemRef           : pointer;
+                                        inItemRef           : pointer;    { Can be nil }
                                         inDeprecatedAndIgnored: Integer) : Integer;
     cdecl; external XPLM_DLL;
 
@@ -192,6 +214,7 @@ TYPE
     Like XPLMAppendMenuItem(), all menu indices are relative to your plugin's
     menus only.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMAppendMenuItemWithCommand(
                                         inMenu              : XPLMMenuID;
                                         inItemName          : XPLMString;
@@ -203,10 +226,8 @@ TYPE
     XPLMAppendMenuSeparator
     
     This routine adds a separator to the end of a menu.
-    
-    Returns a negative index if the append failed (due to an invalid parent
-    menu argument).
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMAppendMenuSeparator(
                                         inMenu              : XPLMMenuID);
     cdecl; external XPLM_DLL;
@@ -217,6 +238,7 @@ TYPE
     This routine changes the name of an existing menu item.  Pass in the menu
     ID and the index of the menu item.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMSetMenuItemName(
                                         inMenu              : XPLMMenuID;
                                         inIndex             : Integer;
@@ -229,6 +251,7 @@ TYPE
     
     Set whether a menu item is checked.  Pass in the menu ID and item index.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMCheckMenuItem(
                                         inMenu              : XPLMMenuID;
                                         index               : Integer;
@@ -241,6 +264,7 @@ TYPE
     This routine returns whether a menu item is checked or not. A menu item's
     check mark may be on or off, or a menu may not have an icon at all.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMCheckMenuItemState(
                                         inMenu              : XPLMMenuID;
                                         index               : Integer;
@@ -252,6 +276,7 @@ TYPE
     
     Sets whether this menu item is enabled.  Items start out enabled.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMEnableMenuItem(
                                         inMenu              : XPLMMenuID;
                                         index               : Integer;
@@ -265,11 +290,25 @@ TYPE
     Removes one item from a menu.  Note that all menu items below are moved up
     one; your plugin must track the change in index numbers.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMRemoveMenuItem(
                                         inMenu              : XPLMMenuID;
                                         inIndex             : Integer);
     cdecl; external XPLM_DLL;
 {$ENDIF XPLM210}
+
+{___________________________________________________________________________
+ * Host API
+ ___________________________________________________________________________}
+
+CONST
+   XPLMMenusHostApiVersion = 0;
+
+
+
+
+
+
 
 
 IMPLEMENTATION

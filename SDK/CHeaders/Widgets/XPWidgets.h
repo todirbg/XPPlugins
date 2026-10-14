@@ -2,7 +2,7 @@
 #define _XPWidgets_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -66,16 +66,20 @@
  *
  */
 
+
 #include "XPWidgetDefs.h"
+
 #include "XPLMDisplay.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 /***************************************************************************
  * WIDGET CREATION AND MANAGEMENT
  ***************************************************************************/
+
 
 /*
  * XPCreateWidget
@@ -109,6 +113,7 @@ extern "C" {
  * into root widgets later to activate them if you wish.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPCreateWidget(
                          int                  inLeft,
                          int                  inTop,
@@ -130,6 +135,7 @@ WIDGET_API XPWidgetID XPCreateWidget(
  * the widget function.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPCreateCustomWidget(
                          int                  inLeft,
                          int                  inTop,
@@ -152,6 +158,7 @@ WIDGET_API XPWidgetID XPCreateCustomWidget(
  * flag, direct child widgets will simply end up with their parent set to 0.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPDestroyWidget(
                          XPWidgetID           inWidget,
                          int                  inDestroyChildren);
@@ -165,14 +172,15 @@ WIDGET_API void       XPDestroyWidget(
  * with this method.
  * 
  * This method supports several dispatching patterns; see XPDispatchMode for
- * more info. The function returns 1 if the message was handled, 0 if it was
- * not.
+ * more info. The function returns true if the message was handled, false if
+ * it was not.
  * 
  * For each widget that receives the message (see the dispatching modes), each
  * widget function from the most recently installed to the oldest one receives
  * the message in order until it is handled.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPSendMessageToWidget(
                          XPWidgetID           inWidget,
                          XPWidgetMessage      inMessage,
@@ -183,6 +191,7 @@ WIDGET_API int        XPSendMessageToWidget(
 /***************************************************************************
  * WIDGET POSITIONING AND VISIBILITY
  ***************************************************************************/
+
 
 /*
  * XPPlaceWidgetWithin
@@ -202,6 +211,7 @@ WIDGET_API int        XPSendMessageToWidget(
  * SetWidgetGeometry.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPPlaceWidgetWithin(
                          XPWidgetID           inSubWidget,
                          XPWidgetID           inContainer);
@@ -212,6 +222,7 @@ WIDGET_API void       XPPlaceWidgetWithin(
  * This routine returns the number of widgets another widget contains.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPCountChildWidgets(
                          XPWidgetID           inWidget);
 
@@ -223,6 +234,7 @@ WIDGET_API int        XPCountChildWidgets(
  * inclusive. If the index is invalid, 0 is returned.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPGetNthChildWidget(
                          XPWidgetID           inWidget,
                          int                  inIndex);
@@ -234,6 +246,7 @@ WIDGET_API XPWidgetID XPGetNthChildWidget(
  * widgets never have parents and therefore always return 0.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPGetParentWidget(
                          XPWidgetID           inWidget);
 
@@ -245,6 +258,7 @@ WIDGET_API XPWidgetID XPGetParentWidget(
  * visible, it will still not be visible to the user.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPShowWidget(
                          XPWidgetID           inWidget);
 
@@ -255,6 +269,7 @@ WIDGET_API void       XPShowWidget(
  * widget might not be visible despite its own visibility state.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPHideWidget(
                          XPWidgetID           inWidget);
 
@@ -266,6 +281,7 @@ WIDGET_API void       XPHideWidget(
  * routine to tell if the user can see the widget.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPIsWidgetVisible(
                          XPWidgetID           inWidget);
 
@@ -276,6 +292,7 @@ WIDGET_API int        XPIsWidgetVisible(
  * or NULL if the passed in widget is not in a rooted hierarchy.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPFindRootWidget(
                          XPWidgetID           inWidget);
 
@@ -289,6 +306,7 @@ WIDGET_API XPWidgetID XPFindRootWidget(
  * top of the tree), this routine does nothing.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPBringRootWidgetToFront(
                          XPWidgetID           inWidget);
 
@@ -300,6 +318,7 @@ WIDGET_API void       XPBringRootWidgetToFront(
  * if the widget is not in a rooted hierarchy.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPIsWidgetInFront(
                          XPWidgetID           inWidget);
 
@@ -310,6 +329,7 @@ WIDGET_API int        XPIsWidgetInFront(
  * Pass NULL for any parameter you are not interested in.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPGetWidgetGeometry(
                          XPWidgetID           inWidget,
                          int *                outLeft,                /* Can be NULL */
@@ -323,6 +343,7 @@ WIDGET_API void       XPGetWidgetGeometry(
  * This function changes the bounding box of a widget.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPSetWidgetGeometry(
                          XPWidgetID           inWidget,
                          int                  inLeft,
@@ -348,6 +369,7 @@ WIDGET_API void       XPSetWidgetGeometry(
  * location.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPGetWidgetForLocation(
                          XPWidgetID           inContainer,
                          int                  inXOffset,
@@ -367,6 +389,7 @@ WIDGET_API XPWidgetID XPGetWidgetForLocation(
  * frame rates up, although you could use it internally.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPGetWidgetExposedGeometry(
                          XPWidgetID           inWidgetID,
                          int *                outLeft,                /* Can be NULL */
@@ -377,6 +400,7 @@ WIDGET_API void       XPGetWidgetExposedGeometry(
 /***************************************************************************
  * ACCESSING WIDGET DATA
  ***************************************************************************/
+
 
 /*
  * XPSetWidgetDescriptor
@@ -390,6 +414,7 @@ WIDGET_API void       XPGetWidgetExposedGeometry(
  * descriptor, many do.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPSetWidgetDescriptor(
                          XPWidgetID           inWidget,
                          const char *         inDescriptor);
@@ -406,6 +431,7 @@ WIDGET_API void       XPSetWidgetDescriptor(
  * terminated (this routine has 'strncpy' semantics).
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPGetWidgetDescriptor(
                          XPWidgetID           inWidget,
                          char *               outDescriptor,
@@ -422,6 +448,7 @@ WIDGET_API int        XPGetWidgetDescriptor(
  * into VR.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPLMWindowID XPGetWidgetUnderlyingWindow(
                          XPWidgetID           inWidget);
 
@@ -432,6 +459,7 @@ WIDGET_API XPLMWindowID XPGetWidgetUnderlyingWindow(
  * associated by a widget by ID.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPSetWidgetProperty(
                          XPWidgetID           inWidget,
                          XPWidgetPropertyID   inProperty,
@@ -447,6 +475,7 @@ WIDGET_API void       XPSetWidgetProperty(
  * information.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API intptr_t   XPGetWidgetProperty(
                          XPWidgetID           inWidget,
                          XPWidgetPropertyID   inProperty,
@@ -455,6 +484,7 @@ WIDGET_API intptr_t   XPGetWidgetProperty(
 /***************************************************************************
  * KEYBOARD MANAGEMENT
  ***************************************************************************/
+
 
 /*
  * XPSetKeyboardFocus
@@ -473,6 +503,7 @@ WIDGET_API intptr_t   XPGetWidgetProperty(
  * setting to X-Plane, keyboard focus is always accepted.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPSetKeyboardFocus(
                          XPWidgetID           inWidget);
 
@@ -484,6 +515,7 @@ WIDGET_API XPWidgetID XPSetKeyboardFocus(
  * if this widget does not have focus.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPLoseKeyboardFocus(
                          XPWidgetID           inWidget);
 
@@ -495,11 +527,13 @@ WIDGET_API void       XPLoseKeyboardFocus(
  * has focus.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetID XPGetWidgetWithFocus(void);
 
 /***************************************************************************
  * CREATING CUSTOM WIDGETS
  ***************************************************************************/
+
 
 /*
  * XPAddWidgetCallback
@@ -518,6 +552,7 @@ WIDGET_API XPWidgetID XPGetWidgetWithFocus(void);
  * widget behavior.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPAddWidgetCallback(
                          XPWidgetID           inWidget,
                          XPWidgetFunc_t       inNewCallback);
@@ -529,9 +564,9 @@ WIDGET_API void       XPAddWidgetCallback(
  * widget class.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API XPWidgetFunc_t XPGetWidgetClassFunc(
                          XPWidgetClass        inWidgetClass);
-
 #ifdef __cplusplus
 }
 #endif

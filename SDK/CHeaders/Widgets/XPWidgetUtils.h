@@ -2,7 +2,7 @@
 #define _XPWidgetUtils_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -35,15 +35,18 @@
  *
  */
 
+
 #include "XPWidgetDefs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 /***************************************************************************
  * GENERAL UTILITIES
  ***************************************************************************/
+
 
 
 
@@ -89,16 +92,25 @@ extern "C" {
  *
  */
 typedef struct {
+
      int                       left;
+
      int                       top;
+
      int                       right;
+
      int                       bottom;
+
      int                       visible;
+
      const char *              descriptor;
+
     /* Whether this widget is a root widget                                       */
      int                       isRoot;
+
     /* The index of the widget to be contained within, or a constant              */
      int                       containerIndex;
+
      XPWidgetClass             widgetClass;
 } XPWidgetCreate_t;
 
@@ -125,6 +137,7 @@ typedef struct {
  * XPUCreateWidgets in a widget created previously.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPUCreateWidgets(
                          const XPWidgetCreate_t * inWidgetDefs,
                          int                  inCount,
@@ -138,6 +151,7 @@ WIDGET_API void       XPUCreateWidgets(
  * the widget.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API void       XPUMoveWidgetBy(
                          XPWidgetID           inWidget,
                          int                  inDeltaX,
@@ -162,6 +176,7 @@ WIDGET_API void       XPUMoveWidgetBy(
  * widget for your window.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPUFixedLayout(
                          XPWidgetMessage      inMessage,
                          XPWidgetID           inWidget,
@@ -187,6 +202,7 @@ WIDGET_API int        XPUFixedLayout(
  * consumed by bringing the window to the foreground.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPUSelectIfNeeded(
                          XPWidgetMessage      inMessage,
                          XPWidgetID           inWidget,
@@ -201,6 +217,7 @@ WIDGET_API int        XPUSelectIfNeeded(
  * editing of any text fields, etc.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPUDefocusKeyboard(
                          XPWidgetMessage      inMessage,
                          XPWidgetID           inWidget,
@@ -216,6 +233,7 @@ WIDGET_API int        XPUDefocusKeyboard(
  * be a sub-region of your widget (for example, a title bar).
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 WIDGET_API int        XPUDragWidget(
                          XPWidgetMessage      inMessage,
                          XPWidgetID           inWidget,
@@ -225,7 +243,6 @@ WIDGET_API int        XPUDragWidget(
                          int                  inTop,
                          int                  inRight,
                          int                  inBottom);
-
 #ifdef __cplusplus
 }
 #endif

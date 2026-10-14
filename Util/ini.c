@@ -24,6 +24,30 @@ static char *ini_get_path() {
     return strcat(ini_path, INI_FILE_NAME);
 }
 
+#if !IBM
+/* Returns 1 if line assigns a value to name, i.e. reads "name = ...". This
+   keeps e.g. "rudder_return" from matching "rudder_return_speed". */
+static int ini_is_key(const char *line, const char *name) {
+    size_t len = strlen(name);
+    while (*line == ' ' || *line == '\t')
+        line++;
+    if (strncmp(line, name, len))
+        return 0;
+    line += len;
+    while (*line == ' ' || *line == '\t')
+        line++;
+    return *line == '=';
+}
+
+/* Returns 1 if line is the header of our section. */
+static int ini_is_section(const char *line) {
+    const char *header = "[" INI_SECT_NAME "]";
+    while (*line == ' ' || *line == '\t')
+        line++;
+    return !strncmp(line, header, strlen(header));
+}
+#endif
+
 int ini_geti(const char *name, int def) {
 #if IBM
     return GetPrivateProfileIntA(INI_SECT_NAME, name, def,
@@ -38,14 +62,9 @@ int ini_geti(const char *name, int def) {
 }
 
 int ini_seti(const char *name, int val) {
-    
-#if IBM
-    char *f = ini_get_path();
     char buf[32];
     snprintf(buf, sizeof(buf), "%i", val);
-    return WritePrivateProfileStringA(INI_SECT_NAME, name, buf, f);
-#endif
-    return val;
+    return ini_sets(name, buf);
 }
 
 float ini_getf(const char *name, float def) {
@@ -57,8 +76,9 @@ float ini_getf(const char *name, float def) {
 }
 
 int ini_setf(const char *name, float val) {
-
-    return 1;
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%g", val);
+    return ini_sets(name, buf);
 }
 
 void ini_gets(const char *name, char *buf, int size, const char *def) {
@@ -78,14 +98,10 @@ void ini_gets(const char *name, char *buf, int size, const char *def) {
             p++;
         if (*p == '[' || *p == ';')
             continue;
-        char *q = strchr(p, '=');
-        if (!q)
+        if (!ini_is_key(p, name))
             continue;
         char n[128] = { 0 };
-        strncpy(n, p, q - p);
-        if (strncmp(name, n, strlen(name)))
-            continue;
-        q++;
+        char *q = strchr(p, '=') + 1;
         while (*q && (*q == ' ' || *q == '\t'))
             q++;
         strcpy(n, q);
@@ -111,10 +127,99 @@ void ini_gets(const char *name, char *buf, int size, const char *def) {
 }
 
 int ini_sets(const char *name, const char *val) {
-    
-#if IBM
     char *f = ini_get_path();
+    if (!f)
+        return 0;
+#if IBM
     return WritePrivateProfileStringA(INI_SECT_NAME, name, val, f);
+#else
+    /* Read the whole file so we can write it back with only this setting
+       changed, keeping comments and everything else as is. */
+    char *data = NULL;
+    long size = 0;
+    FILE *fp = fopen(f, "rb");
+    if (fp) {
+        fseek(fp, 0, SEEK_END);
+        size = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        data = malloc(size + 1);
+        if (!data) {
+            fclose(fp);
+            return 0;
+        }
+        size = fread(data, 1, size, fp);
+        data[size] = '\0';
+        fclose(fp);
+    }
+    int found = 0;
+    for (char *line = data; line && *line && !found; ) {
+        found = ini_is_key(line, name);
+        line = strchr(line, '\n');
+        if (line)
+            line++;
+    }
+    /* Write to a temporary file first so a failed write can't destroy the
+       existing settings. */
+    char tmp[MAX_PATH + 8];
+    snprintf(tmp, sizeof(tmp), "%s.tmp", f);
+    fp = fopen(tmp, "wb");
+    if (!fp) {
+        free(data);
+        return 0;
+    }
+    const char *eol = data && strstr(data, "\r\n") ? "\r\n" : "\n";
+    int written = 0;
+    for (char *line = data; line && *line; ) {
+        char *next = strchr(line, '\n');
+        size_t len = next ? (size_t)(next - line + 1) : strlen(line);
+        if (!written && ini_is_key(line, name)) {
+            fprintf(fp, "%s = %s%s", name, val, eol);
+            written = 1;
+        } else {
+            fwrite(line, 1, len, fp);
+            /* Add a new setting right below the section header. */
+            if (!written && !found && ini_is_section(line)) {
+                if (!next)
+                    fputs(eol, fp);
+                fprintf(fp, "%s = %s%s", name, val, eol);
+                written = 1;
+            }
+        }
+        line = next ? next + 1 : NULL;
+    }
+    if (!written) {
+        /* There's no section header yet, so start one. */
+        if (size > 0 && data[size - 1] != '\n')
+            fputs(eol, fp);
+        fprintf(fp, "[%s]%s%s = %s%s", INI_SECT_NAME, eol, name, val, eol);
+    }
+    free(data);
+    int err = ferror(fp);
+    if (fclose(fp) || err || rename(tmp, f)) {
+        _log("ini_sets: could not write %s", f);
+        remove(tmp);
+        return 0;
+    }
+    return 1;
 #endif
-    return 0;
+}
+
+int ini_write_default(const char *contents) {
+    char *f = ini_get_path();
+    if (!f)
+        return 0;
+    /* Leave an existing file alone. */
+    FILE *fp = fopen(f, "r");
+    if (fp) {
+        fclose(fp);
+        return 1;
+    }
+    /* Text mode gives the file native line endings. */
+    fp = fopen(f, "w");
+    if (!fp) {
+        _log("ini_write_default: could not create %s", f);
+        return 0;
+    }
+    fputs(contents, fp);
+    return fclose(fp) == 0;
 }

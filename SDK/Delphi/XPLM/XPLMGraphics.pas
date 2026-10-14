@@ -1,5 +1,5 @@
 {
-   Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+   Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
    rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
 }
 
@@ -39,6 +39,72 @@ INTERFACE
 USES
     XPLMDefs;
    {$A4}
+
+TYPE
+   XPLMChar   = AnsiChar;
+   XPLMString = PAnsiChar;
+   PXPLMString = ^XPLMString;
+
+CONST
+{$IFDEF MSWINDOWS}
+   XPLM_DLL = 'XPLM_64.dll';
+{$ENDIF}
+{$IFDEF DARWIN}
+   XPLM_DLL = 'XPLM.framework/XPLM';
+{$ENDIF}
+{$IFDEF LINUX}
+   XPLM_DLL = 'XPLM_64.so';
+{$ENDIF}
+{___________________________________________________________________________
+ * X-PLANE COORDINATES
+ ___________________________________________________________________________}
+{
+               These routines allow you to use OpenGL with X-Plane.
+}
+
+
+   {
+    XPLMWorldToLocal
+    
+                    This routine translates coordinates from latitude,
+                    longitude, and altitude to local scene coordinates.
+                    Latitude and longitude are in decimal degrees, and altitude
+                    is in meters MSL (mean sea level).  The XYZ coordinates are
+                    in meters in the local OpenGL coordinate system.
+   }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
+   PROCEDURE XPLMWorldToLocal(
+                                        inLatitude          : Real;
+                                        inLongitude         : Real;
+                                        inAltitude          : Real;
+                                        outX                : PReal;
+                                        outY                : PReal;
+                                        outZ                : PReal);
+    cdecl; external XPLM_DLL;
+
+   {
+    XPLMLocalToWorld
+    
+                    This routine translates a local coordinate triplet back
+                    into latitude, longitude, and altitude.  Latitude and
+                    longitude are in decimal degrees, and altitude is in meters
+                    MSL (mean sea level).  The XYZ coordinates are in meters in
+                    the local OpenGL coordinate system.
+    
+                    NOTE: world coordinates are less precise than local
+                    coordinates; you should try to avoid round tripping from
+                    local to world and back.
+   }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
+   PROCEDURE XPLMLocalToWorld(
+                                        inX                 : Real;
+                                        inY                 : Real;
+                                        inZ                 : Real;
+                                        outLatitude         : PReal;
+                                        outLongitude        : PReal;
+                                        outAltitude         : PReal);
+    cdecl; external XPLM_DLL;
+
 {___________________________________________________________________________
  * X-PLANE GRAPHICS
  ___________________________________________________________________________}
@@ -71,6 +137,18 @@ TYPE
      { The exterior light map for the user's aircraft.                            }
      ,xplm_Tex_AircraftLiteMap                 = 2
 {$ENDIF XPLM_DEPRECATED}
+ 
+{$IFDEF XPLM420}
+     { The weather radar instrument texture as controlled by the pilot-side radar }
+     { controls                                                                   }
+     ,xplm_Tex_Radar_Pilot                     = 3
+{$ENDIF XPLM420}
+ 
+{$IFDEF XPLM420}
+     { The weather radar instrument texture as controlled by the copilot-side     }
+     { radar controls                                                             }
+     ,xplm_Tex_Radar_Copilot                   = 4
+{$ENDIF XPLM420}
  
    );
    PXPLMTextureID = ^XPLMTextureID;
@@ -122,6 +200,7 @@ TYPE
      drawing.  Prefer to use XPLMInstancing to draw objects.  All calls to
      XPLMSetGraphicsState should have no fog or lighting.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMSetGraphicsState(
                                         inEnableFog         : Integer;
                                         inNumberTexUnits    : Integer;
@@ -149,6 +228,7 @@ TYPE
     
     Use this routine instead of glBindTexture(GL_TEXTURE_2D, ....);
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMBindTexture2d(
                                         inTextureNum        : Integer;
                                         inTextureUnit       : Integer);
@@ -161,59 +241,22 @@ TYPE
     IDs. This routine historically ensured that plugins don't use texure IDs
     that X-Plane is reserving for its own use.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMGenerateTextureNumbers(
                                         outTextureIDs       : PInteger;
                                         inCount             : Integer);
     cdecl; external XPLM_DLL;
 
-{$IFDEF XPLM_DEPRECATED}
    {
     XPLMGetTexture
     
     XPLMGetTexture returns the OpenGL texture ID of an X-Plane texture based on
     a generic identifying code.  For example, you can get the texture for
-    X-Plane's UI bitmaps.
+    X-Plane's  weather radar.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMGetTexture(
                                         inTexture           : XPLMTextureID) : Integer;
-    cdecl; external XPLM_DLL;
-{$ENDIF XPLM_DEPRECATED}
-
-   {
-    XPLMWorldToLocal
-    
-    This routine translates coordinates from latitude, longitude, and altitude
-    to local scene coordinates. Latitude and longitude are in decimal degrees,
-    and altitude is in meters MSL (mean sea level).  The XYZ coordinates are in
-    meters in the local OpenGL coordinate system.
-   }
-   PROCEDURE XPLMWorldToLocal(
-                                        inLatitude          : Real;
-                                        inLongitude         : Real;
-                                        inAltitude          : Real;
-                                        outX                : PReal;
-                                        outY                : PReal;
-                                        outZ                : PReal);
-    cdecl; external XPLM_DLL;
-
-   {
-    XPLMLocalToWorld
-    
-    This routine translates a local coordinate triplet back into latitude,
-    longitude, and altitude.  Latitude and longitude are in decimal degrees,
-    and altitude is in meters MSL (mean sea level).  The XYZ coordinates are in
-    meters in the local OpenGL coordinate system.
-    
-    NOTE: world coordinates are less precise than local coordinates; you should
-    try to avoid round tripping from local to world and back.
-   }
-   PROCEDURE XPLMLocalToWorld(
-                                        inX                 : Real;
-                                        inY                 : Real;
-                                        inZ                 : Real;
-                                        outLatitude         : PReal;
-                                        outLongitude        : PReal;
-                                        outAltitude         : PReal);
     cdecl; external XPLM_DLL;
 
    {
@@ -223,6 +266,7 @@ TYPE
     screen but making text easy to read.  This is the same graphics primitive
     used by X-Plane to show text files.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDrawTranslucentDarkBox(
                                         inLeft              : Integer;
                                         inTop               : Integer;
@@ -356,6 +400,7 @@ TYPE
     array of three floating point colors, representing RGB intensities from 0.0
     to 1.0.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDrawString(
                                         inColorRGB          : PSingle;
                                         inXOffset           : Integer;
@@ -375,6 +420,7 @@ TYPE
     well as a character set. This routine returns the xOffset plus width of the
     string drawn.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDrawNumber(
                                         inColorRGB          : PSingle;
                                         inXOffset           : Integer;
@@ -394,6 +440,7 @@ TYPE
     you don't need a given field.  Note that for a proportional font the width
     will be an arbitrary, hopefully average width.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMGetFontDimensions(
                                         inFontID            : XPLMFontID;
                                         outCharWidth        : PInteger;    { Can be nil }
@@ -411,6 +458,7 @@ TYPE
     value is floating point; it is possible that future font drawing may allow
     for fractional pixels.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMMeasureString(
                                         inFontID            : XPLMFontID;
                                         inChar              : XPLMString;

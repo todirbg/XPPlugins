@@ -2,7 +2,7 @@
 #define _XPStandardWidgets_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -28,11 +28,13 @@
  *
  */
 
+
 #include "XPWidgetDefs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /***************************************************************************
  * MAIN WINDOW
@@ -54,8 +56,10 @@ extern "C" {
  *
  */
 enum {
+
     /* The standard main window; pin stripes on XP7, metal frame on XP 6.         */
     xpMainWindowStyle_MainWindow             = 0,
+
 
     /* A translucent dark gray window.                                            */
     xpMainWindowStyle_Translucent            = 1,
@@ -68,9 +72,11 @@ enum {
  *
  */
 enum {
+
     /* This property specifies the type of window.  Set to one of the main window *
      * types above.                                                               */
     xpProperty_MainWindowType                = 1100,
+
 
     /* This property specifies whether the main window has close boxes in its     *
      * corners.                                                                   */
@@ -84,6 +90,7 @@ enum {
  *
  */
 enum {
+
     /* This message is sent when the close buttons for your window are pressed.   */
     xpMessage_CloseButtonPushed              = 1200,
 
@@ -110,11 +117,14 @@ enum {
  *
  */
 enum {
+
     /* A panel that sits inside a main window.                                    */
     xpSubWindowStyle_SubWindow               = 0,
 
+
     /* A screen that sits inside a panel for showing text information.            */
     xpSubWindowStyle_Screen                  = 2,
+
 
     /* A list view for scrolling lists.                                           */
     xpSubWindowStyle_ListView                = 3,
@@ -127,6 +137,7 @@ enum {
  *
  */
 enum {
+
     /* This property specifies the type of window.  Set to one of the subwindow   *
      * types above.                                                               */
     xpProperty_SubWindowType                 = 1200,
@@ -168,19 +179,24 @@ enum {
  *
  */
 enum {
+
     /* This is a standard push button, like an 'OK' or 'Cancel' button in a dialog*
      * box.                                                                       */
     xpPushButton                             = 0,
+
 
     /* A check box or radio button.  Use this and the button behaviors below to   *
      * get the desired behavior.                                                  */
     xpRadioButton                            = 1,
 
+
     /* A window close box.                                                        */
     xpWindowCloseBox                         = 3,
 
+
     /* A small down arrow.                                                        */
     xpLittleDownArrow                        = 5,
+
 
     /* A small up arrow.                                                          */
     xpLittleUpArrow                          = 6,
@@ -195,15 +211,18 @@ enum {
  *
  */
 enum {
+
     /* Standard push button behavior. The button highlights while the mouse is    *
      * clicked over it and unhighlights when the mouse is moved outside of it or  *
      * released. If the mouse is released over the button, the                    *
      * xpMsg_PushButtonPressed message is sent.                                   */
     xpButtonBehaviorPushButton               = 0,
 
+
     /* Check box behavior. The button immediately toggles its value when the mouse*
      * is clicked and sends out a xpMsg_ButtonStateChanged message.               */
     xpButtonBehaviorCheckBox                 = 1,
+
 
     /* Radio button behavior. The button immediately sets its state to one and    *
      * sends out a xpMsg_ButtonStateChanged message if it was not already set to  *
@@ -218,13 +237,16 @@ enum {
  *
  */
 enum {
+
     /* This property sets the visual type of button.  Use one of the button types *
      * above.                                                                     */
     xpProperty_ButtonType                    = 1300,
 
+
     /* This property sets the button's behavior.  Use one of the button behaviors *
      * above.                                                                     */
     xpProperty_ButtonBehavior                = 1301,
+
 
     /* This property tells whether a check box or radio button is "checked" or    *
      * not. Not used for push buttons.                                            */
@@ -243,11 +265,13 @@ enum {
  *
  */
 enum {
+
     /* This message is sent when the user completes a click and release in a      *
      * button with push button behavior. Parameter one of the message is the      *
      * widget ID of the button. This message is dispatched up the widget          *
      * hierarchy.                                                                 */
     xpMsg_PushButtonPressed                  = 1300,
+
 
     /* This message is sent when a button is clicked that has radio button or     *
      * check box behavior and its value changes. (Note that if the value changes  *
@@ -291,13 +315,16 @@ enum {
  *
  */
 enum {
+
     /* A field for text entry.                                                    */
     xpTextEntryField                         = 0,
+
 
     /* A transparent text field. The user can type and the text is drawn, but no  *
      * background is drawn. You can draw your own background by adding a widget   *
      * handler and prehandling the draw message.                                  */
     xpTextTransparent                        = 3,
+
 
     /* A translucent edit field, dark gray.                                       */
     xpTextTranslucent                        = 4,
@@ -310,35 +337,44 @@ enum {
  *
  */
 enum {
+
     /* This is the character position the selection starts at, zero based. If it  *
      * is the same as the end insertion point, the insertion point is not a       *
      * selection.                                                                 */
     xpProperty_EditFieldSelStart             = 1400,
 
+
     /* This is the character position of the end of the selection.                */
     xpProperty_EditFieldSelEnd               = 1401,
+
 
     /* This is the character position a drag was started at if the user is        *
      * dragging to select text, or -1 if a drag is not in progress.               */
     xpProperty_EditFieldSelDragStart         = 1402,
 
+
     /* This is the type of text field to display, from the above list.            */
     xpProperty_TextFieldType                 = 1403,
+
 
     /* Set this property to 1 to password protect the field. Characters will be   *
      * drawn as *s even though the descriptor will contain plain-text.            */
     xpProperty_PasswordMode                  = 1404,
 
+
     /* The max number of characters you can enter, if limited.  Zero means        *
      * unlimited.                                                                 */
     xpProperty_MaxCharacters                 = 1405,
+
 
     /* The first visible character on the left.  This effectively scrolls the text*
      * field.                                                                     */
     xpProperty_ScrollPosition                = 1406,
 
+
     /* The font to draw the field's text with.  (An XPLMFontID.)                  */
     xpProperty_Font                          = 1407,
+
 
     /* This is the active side of the insert selection.  (Internal)               */
     xpProperty_ActiveEditSide                = 1408,
@@ -351,6 +387,7 @@ enum {
  *
  */
 enum {
+
     /* The text field sends this message to itself when its text changes. It sends*
      * the message up the call chain; param1 is the text field's widget ID.       */
     xpMsg_TextFieldChanged                   = 1400,
@@ -378,8 +415,10 @@ enum {
  *
  */
 enum {
+
     /* A standard X-Plane scroll bar (with arrows on the ends).                   */
     xpScrollBarTypeScrollBar                 = 0,
+
 
     /* A slider, no arrows.                                                       */
     xpScrollBarTypeSlider                    = 1,
@@ -392,21 +431,27 @@ enum {
  *
  */
 enum {
+
     /* The current position of the thumb (in between the min and max, inclusive)  */
     xpProperty_ScrollBarSliderPosition       = 1500,
+
 
     /* The value the scroll bar has when the thumb is in the lowest position.     */
     xpProperty_ScrollBarMin                  = 1501,
 
+
     /* The value the scroll bar has when the thumb is in the highest position.    */
     xpProperty_ScrollBarMax                  = 1502,
+
 
     /* How many units to move the scroll bar when clicking next to the thumb. The *
      * scroll bar always moves one unit when the arrows are clicked.              */
     xpProperty_ScrollBarPageAmount           = 1503,
 
+
     /* The type of scrollbar from the enums above.                                */
     xpProperty_ScrollBarType                 = 1504,
+
 
     /* Used internally.                                                           */
     xpProperty_ScrollBarSlop                 = 1505,
@@ -419,6 +464,7 @@ enum {
  *
  */
 enum {
+
     /* The scroll bar sends this message when the slider position changes. It     *
      * sends the message up the call chain; param1 is the scroll bar widget ID.   */
     xpMsg_ScrollBarSliderPositionChanged     = 1500,
@@ -444,6 +490,7 @@ enum {
  *
  */
 enum {
+
     /* This property specifies whether the caption is lit; use lit captions       *
      * against screens.                                                           */
     xpProperty_CaptionLit                    = 1600,
@@ -470,41 +517,60 @@ enum {
  *
  */
 enum {
+
     xpShip                                   = 4,
+
 
     xpILSGlideScope                          = 5,
 
+
     xpMarkerLeft                             = 6,
+
 
     xp_Airport                               = 7,
 
+
     xpNDB                                    = 8,
+
 
     xpVOR                                    = 9,
 
+
     xpRadioTower                             = 10,
+
 
     xpAircraftCarrier                        = 11,
 
+
     xpFire                                   = 12,
+
 
     xpMarkerRight                            = 13,
 
+
     xpCustomObject                           = 14,
+
 
     xpCoolingTower                           = 15,
 
+
     xpSmokeStack                             = 16,
+
 
     xpBuilding                               = 17,
 
+
     xpPowerLine                              = 18,
+
 
     xpVORWithCompassRose                     = 19,
 
+
     xpOilPlatform                            = 21,
 
+
     xpOilPlatformSmall                       = 22,
+
 
     xpWayPoint                               = 23,
 
@@ -516,6 +582,7 @@ enum {
  *
  */
 enum {
+
     /* This property controls the type of icon that is drawn.                     */
     xpProperty_GeneralGraphicsType           = 1700,
 
@@ -530,6 +597,7 @@ enum {
  *
  */
 
+
 #define xpWidgetClass_Progress 8
 
 /*
@@ -537,18 +605,20 @@ enum {
  *
  */
 enum {
+
     /* This is the current value of the progress indicator.                       */
     xpProperty_ProgressPosition              = 1800,
 
+
     /* This is the minimum value, equivalent to 0% filled.                        */
     xpProperty_ProgressMin                   = 1801,
+
 
     /* This is the maximum value, equivalent to 100% filled.                      */
     xpProperty_ProgressMax                   = 1802,
 
 
 };
-
 #ifdef __cplusplus
 }
 #endif

@@ -17,6 +17,8 @@ The absolute mouse position on the screen represents the deviation from center o
 
 Additionally, a magenta text indicator is displayed in the upper-left corner of the screen when mouse yoke control is active.
 
+The yoke and rudder cursor symbols are X-Plane's own and require X-Plane 12.3 or newer. On older versions the cursor remains a normal arrow.
+
 <p align="center">
   <a href="image-1.png?raw=true" target="_blank">
     <img title="Mouse Yoke Control" src="image-1.png?raw=true" width="860" height="503"/>
@@ -32,6 +34,12 @@ While in mouse yoke mode, press and hold the left mouse button to switch to rudd
 </p>
 
 Release the left mouse button to transition back into mouse yoke mode. The rudder will then gradually return to the neutral position. 
+
+While in mouse yoke mode, press and hold the right mouse button and move the mouse to look around in the 3D cockpit. The yoke and rudder stay where they are and the magenta text indicator will read *Mouse Look*. Release the right mouse button and the cursor returns to where it was, so the yoke continues from the same position.
+
+Mouse clicks don't reach the cockpit while mouse yoke control is enabled, so holding the left mouse button for rudder control won't accidentally flip any switches. The mouse wheel still works as usual. To click cockpit controls, toggle mouse yoke control off first.
+
+In outside views the cursor and the left mouse button work the same as in the cockpit. The right mouse button is left to X-Plane there, so dragging with it moves the camera as usual.
 
 ### Download
 You can get the latest version [here](https://github.com/smiley22/XPPlugins/releases/tag/BetterMouseYoke).
@@ -49,27 +57,45 @@ Once installed, you will find a new command for toggling mouse yoke control on o
 </p>
 
 ##### Config File
-On startup, the plugin looks for a *settings.ini* file in its' directory, i.e. *"X Plane 11\Resources\plugins\BetterMouseYoke\settings.ini"*. This file allows you to change some of the settings of the plugin. If the file does not exist, the plugin uses default values.
+On startup, the plugin looks for a *settings.ini* file in its' directory, i.e. *"X Plane 11\Resources\plugins\BetterMouseYoke\settings.ini"*. This file allows you to change some of the settings of the plugin. If the file does not exist, the plugin creates one with the default values. Options you toggle in the plugin's menu are saved to this file as well.
 
-Here's an example *settings.ini* file with all the options the plugin allows you to configure. Lines starting with a **#** are comments.
+Here's the *settings.ini* file the plugin creates, with all the options the plugin allows you to configure. Lines starting with a **;** are comments.
 
 ```
+; BetterMouseYoke settings. Lines starting with ; are comments.
+; Remove a line to use the default value.
 [settings]
-# When entering mouse yoke mode, set the mouse cursor to align with
-# the current yoke deflection to avoid rapid movements.
-# Set to 0 to disable.
+
+; When entering mouse yoke mode, move the mouse cursor to match the
+; current yoke deflection to avoid sudden control movements.
+; Set to 0 to disable.
 set_pos = 1
-# Change the mouse cursor symbol when in yoke or rudder mode. Set
-# this to 0 to disable.
+
+; When entering rudder mode, move the mouse cursor to match the current
+; rudder deflection. Set to 0 to disable.
+set_rudder_pos = 1
+
+; Change the mouse cursor symbol in yoke and rudder mode (requires
+; X-Plane 12.3 or newer). Set to 0 to disable.
 change_cursor = 1
-# Defines the mouse movement range for rudder deflection in rudder mode.
-# In other words, the greater the value, the greater the distance between
-# the two green vertical bars on the screen.
-rudder_deflection_distance = 100
-# The speed (in units per second) with which the rudder returns to the
-# neutral position after exiting rudder mode.
-# The default value of 2.0 means that it takes the rudder half a second
-# to return to neutral from full left or right deflection.
-rudder_return_speed = 2.0
+
+; Gradually return the rudder to neutral after leaving rudder mode.
+; Set to 0 to disable.
+rudder_return = 1
+
+; The speed (in units per second) with which the rudder returns to
+; neutral. A value of 2 takes half a second from full deflection.
+rudder_return_speed = 2
+
+; The mouse movement range for full rudder deflection in rudder mode,
+; i.e. the distance between the two green bars on the screen.
+rudder_deflection_distance = 200
+
+; How many degrees the view turns per pixel of mouse movement when
+; looking around with the right mouse button.
+look_sensitivity = 0.2
+
+; Write extra debug messages to X-Plane's Log.txt. Set to 1 to enable.
+debug = 0
 ```
 

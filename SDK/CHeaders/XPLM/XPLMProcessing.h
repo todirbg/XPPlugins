@@ -2,7 +2,7 @@
 #define _XPLMProcessing_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -30,6 +30,13 @@
  * callback after the deadline" schedule, e.g. your callbacks will always be
  * slightly late to ensure that we don't run faster than your deadline.
  * 
+ * WARNING: Do NOT use the post-flightmodel callback for initialization,
+ * resource creation, etc. The only recommended use of post-FM callbacks is to
+ * "patch" the computed values of the flightmodel using dataref read-writes,
+ * and to compute custom system values by reading the flightmodel. APIs that
+ * create resources or initialize the sim may issue warnings, crash rhe sim,
+ * or have unexpected results.
+ * 
  * WARNING: Do NOT use these callbacks to draw! You cannot draw during flight
  * loop callbacks. Use the drawing callbacks (see XPLMDisplay for more info)
  * for graphics or the XPLMInstance functions for aircraft or models. (One
@@ -38,15 +45,18 @@
  *
  */
 
+
 #include "XPLMDefs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 /***************************************************************************
  * FLIGHT LOOP CALLBACKS
  ***************************************************************************/
+
 
 #if defined(XPLM210)
 /*
@@ -57,8 +67,10 @@ extern "C" {
  *
  */
 enum {
+
     /* Your callback runs before X-Plane integrates the flight model.             */
     xplm_FlightLoop_Phase_BeforeFlightModel  = 0,
+
 
     /* Your callback runs after X-Plane integrates the flight model.              */
     xplm_FlightLoop_Phase_AfterFlightModel   = 1,
@@ -118,7 +130,7 @@ typedef float (* XPLMFlightLoop_f)(
                          float                inElapsedSinceLastCall,
                          float                inElapsedTimeSinceLastFlightLoop,
                          int                  inCounter,
-                         void *               inRefcon);
+                         void*                inRefcon);
 
 #if defined(XPLM210)
 /*
@@ -130,10 +142,14 @@ typedef float (* XPLMFlightLoop_f)(
  *
  */
 typedef struct {
+
      int                       structSize;
+
      XPLMFlightLoopPhaseType   phase;
+
      XPLMFlightLoop_f          callbackFunc;
-     void *                    refcon;
+
+     void*                     refcon;
 } XPLMCreateFlightLoop_t;
 #endif /* XPLM210 */
 
@@ -149,6 +165,7 @@ typedef struct {
  * for timing critical applications like network multiplayer.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API float      XPLMGetElapsedTime(void);
 
 /*
@@ -158,6 +175,7 @@ XPLM_API float      XPLMGetElapsedTime(void);
  * computed/video frame rendered.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API int        XPLMGetCycleNumber(void);
 
 /*
@@ -175,10 +193,11 @@ XPLM_API int        XPLMGetCycleNumber(void);
  * XPLMCreateFlightLoop for more control.)
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMRegisterFlightLoopCallback(
                          XPLMFlightLoop_f     inFlightLoop,
                          float                inInterval,
-                         void *               inRefcon);
+                         void*                inRefcon);
 
 /*
  * XPLMUnregisterFlightLoopCallback
@@ -191,9 +210,10 @@ XPLM_API void       XPLMRegisterFlightLoopCallback(
  * XPLMRegisterFlightLoopCallback.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMUnregisterFlightLoopCallback(
                          XPLMFlightLoop_f     inFlightLoop,
-                         void *               inRefcon);
+                         void*                inRefcon);
 
 /*
  * XPLMSetFlightLoopCallbackInterval
@@ -204,16 +224,17 @@ XPLM_API void       XPLMUnregisterFlightLoopCallback(
  * 
  * inInterval is formatted the same way as in XPLMRegisterFlightLoopCallback;
  * positive for seconds, negative for cycles, and 0 for deactivating the
- * callback. If inRelativeToNow is 1, times are from the time of this call;
+ * callback. If inRelativeToNow is true, times are from the time of this call;
  * otherwise they are from the time the callback was last called (or the time
  * it was registered if it has never been called.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMSetFlightLoopCallbackInterval(
                          XPLMFlightLoop_f     inFlightLoop,
                          float                inInterval,
                          int                  inRelativeToNow,
-                         void *               inRefcon);
+                         void*                inRefcon);
 
 #if defined(XPLM210)
 /*
@@ -221,9 +242,10 @@ XPLM_API void       XPLMSetFlightLoopCallbackInterval(
  * 
  * This routine creates a flight loop callback and returns its ID. The flight
  * loop callback is created using the input param struct, and is inited to be
- * unscheduled.
+ * unscheduled. Use XPLMScheduleFlightLoop to schedule it.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API XPLMFlightLoopID XPLMCreateFlightLoop(
                          XPLMCreateFlightLoop_t * inParams);
 #endif /* XPLM210 */
@@ -236,6 +258,7 @@ XPLM_API XPLMFlightLoopID XPLMCreateFlightLoop(
  * loops created with the newer XPLMCreateFlightLoop API.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMDestroyFlightLoop(
                          XPLMFlightLoopID     inFlightLoopID);
 #endif /* XPLM210 */
@@ -254,11 +277,16 @@ XPLM_API void       XPLMDestroyFlightLoop(
  * time the flight loop was registered (if never called).
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMScheduleFlightLoop(
                          XPLMFlightLoopID     inFlightLoopID,
                          float                inInterval,
                          int                  inRelativeToNow);
 #endif /* XPLM210 */
+
+/***************************************************************************
+ * XLUA TIMERS
+ ***************************************************************************/
 
 #ifdef __cplusplus
 }

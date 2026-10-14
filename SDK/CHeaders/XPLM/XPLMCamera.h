@@ -2,7 +2,7 @@
 #define _XPLMCamera_h_
 
 /*
- * Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+ * Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
  * rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
  *
  */
@@ -45,15 +45,18 @@
  *
  */
 
+
 #include "XPLMDefs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
 /***************************************************************************
  * CAMERA CONTROL
  ***************************************************************************/
+
 
 /*
  * XPLMCameraControlDuration
@@ -63,8 +66,10 @@ extern "C" {
  *
  */
 enum {
+
     /* Control the camera until the user picks a new view.                        */
     xplm_ControlCameraUntilViewChanges       = 1,
+
 
     /* Control the camera until your plugin is disabled or another plugin forcibly*
      * takes control.                                                             */
@@ -86,12 +91,19 @@ typedef int XPLMCameraControlDuration;
  *
  */
 typedef struct {
+
      float                     x;
+
      float                     y;
+
      float                     z;
+
      float                     pitch;
+
      float                     heading;
+
      float                     roll;
+
      float                     zoom;
 } XPLMCameraPosition_t;
 
@@ -100,19 +112,19 @@ typedef struct {
  * 
  * You use an XPLMCameraControl function to provide continuous control over
  * the camera. You are passed a structure in which to put the new camera
- * position; modify it and return 1 to reposition the camera. Return 0 to
- * surrender control of the camera; camera control will be handled by X-Plane
- * on this draw loop. The contents of the structure as you are called are
- * undefined.
+ * position; modify it and return true to reposition the camera. Return false
+ * to surrender control of the camera; camera control will be handled by
+ * X-Plane on this draw loop. The contents of the structure as you are called
+ * are undefined.
  * 
  * If X-Plane is taking camera control away from you, this function will be
- * called with inIsLosingControl set to 1 and ioCameraPosition NULL.
+ * called with inIsLosingControl set to true and ioCameraPosition NULL.
  *
  */
 typedef int (* XPLMCameraControl_f)(
                          XPLMCameraPosition_t * outCameraPosition,      /* Can be NULL */
                          int                  inIsLosingControl,
-                         void *               inRefcon);
+                         void*                inRefcon);
 
 /*
  * XPLMControlCamera
@@ -122,10 +134,11 @@ typedef int (* XPLMCameraControl_f)(
  * control (indefinitely or until a new view mode is set by the user).
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMControlCamera(
                          XPLMCameraControlDuration inHowLong,
                          XPLMCameraControl_f  inControlFunc,
-                         void *               inRefcon);
+                         void*                inRefcon);
 
 /*
  * XPLMDontControlCamera
@@ -138,16 +151,18 @@ XPLM_API void       XPLMControlCamera(
  * posession of the camera.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMDontControlCamera(void);
 
 /*
  * XPLMIsCameraBeingControlled
  * 
- * This routine returns 1 if the camera is being controlled, zero if it is
+ * This routine returns true if the camera is being controlled, false if it is
  * not. If it is and you pass in a pointer to a camera control duration, the
  * current control duration will be returned.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API int        XPLMIsCameraBeingControlled(
                          XPLMCameraControlDuration * outCameraControlDuration);    /* Can be NULL */
 
@@ -157,9 +172,9 @@ XPLM_API int        XPLMIsCameraBeingControlled(
  * This function reads the current camera position.
  *
  */
+/* NOT thread-safe. Use ONLY from the main thread, in callbacks.                 */
 XPLM_API void       XPLMReadCameraPosition(
                          XPLMCameraPosition_t * outCameraPosition);
-
 #ifdef __cplusplus
 }
 #endif

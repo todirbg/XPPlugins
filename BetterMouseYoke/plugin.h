@@ -17,15 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include <stdint.h>
-#if IBM
-#pragma comment(lib, "detours.lib")
-#include "detours.h"
-int hook_set_cursor(int attach);
-#elif LIN
+#if LIN
 #include <X11/Xlib.h>
 #include <X11/extensions/XInput2.h>
-#include <X11/Xcursor/Xcursor.h>
 #include <X11/extensions/Xfixes.h>
 #endif
 
@@ -36,6 +30,7 @@ typedef enum {
     CURSOR_RUDDER
 } cursor_t;
 
+void write_default_settings();
 int init_menu();
 int toggle_yoke_control_cb(XPLMCommandRef cmd, XPLMCommandPhase phase, void *ref);
 int draw_cb(XPLMDrawingPhase phase, int before, void *ref);
@@ -45,6 +40,17 @@ void set_cursor_from_yoke();
 void set_cursor_pos(int x, int y);
 void set_cursor_bmp(cursor_t cursor);
 int controlling_rudder(int *x, int *y);
+void update_look();
+void win_draw_cb(XPLMWindowID id, void *ref);
+int win_click_cb(XPLMWindowID id, int x, int y, XPLMMouseStatus status,
+    void *ref);
+int win_right_click_cb(XPLMWindowID id, int x, int y, XPLMMouseStatus status,
+    void *ref);
+void win_key_cb(XPLMWindowID id, char key, XPLMKeyFlags flags, char vkey,
+    void *ref, int losing_focus);
+XPLMCursorStatus win_cursor_cb(XPLMWindowID id, int x, int y, void *ref);
+int win_wheel_cb(XPLMWindowID id, int x, int y, int wheel, int clicks,
+    void *ref);
 
 #if LIN
 static int has_xi2(Display *dpy);

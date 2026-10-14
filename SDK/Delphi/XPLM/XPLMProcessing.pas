@@ -1,5 +1,5 @@
 {
-   Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+   Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
    rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
 }
 
@@ -25,6 +25,13 @@ INTERFACE
    callback after the deadline" schedule, e.g. your callbacks will always be
    slightly late to ensure that we don't run faster than your deadline.
    
+   WARNING: Do NOT use the post-flightmodel callback for initialization,
+   resource creation, etc. The only recommended use of post-FM callbacks is to
+   "patch" the computed values of the flightmodel using dataref read-writes,
+   and to compute custom system values by reading the flightmodel. APIs that
+   create resources or initialize the sim may issue warnings, crash rhe sim,
+   or have unexpected results.
+   
    WARNING: Do NOT use these callbacks to draw! You cannot draw during flight
    loop callbacks. Use the drawing callbacks (see XPLMDisplay for more info)
    for graphics or the XPLMInstance functions for aircraft or models. (One
@@ -35,6 +42,22 @@ INTERFACE
 USES
     XPLMDefs;
    {$A4}
+
+TYPE
+   XPLMChar   = AnsiChar;
+   XPLMString = PAnsiChar;
+   PXPLMString = ^XPLMString;
+
+CONST
+{$IFDEF MSWINDOWS}
+   XPLM_DLL = 'XPLM_64.dll';
+{$ENDIF}
+{$IFDEF DARWIN}
+   XPLM_DLL = 'XPLM.framework/XPLM';
+{$ENDIF}
+{$IFDEF LINUX}
+   XPLM_DLL = 'XPLM_64.so';
+{$ENDIF}
 {___________________________________________________________________________
  * FLIGHT LOOP CALLBACKS
  ___________________________________________________________________________}
@@ -108,7 +131,7 @@ TYPE
                                     inElapsedSinceLastCall: Single;
                                     inElapsedTimeSinceLastFlightLoop: Single;
                                     inCounter           : Integer;
-                                    inRefcon            : pointer) : Single; cdecl;
+                                    inRefcon            : pointer) : Single; cdecl;    { Can be nil }
 
 {$IFDEF XPLM210}
    {
@@ -139,6 +162,7 @@ TYPE
     precision in both its data type and its source.  Do not attempt to use it
     for timing critical applications like network multiplayer.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMGetElapsedTime: Single;
     cdecl; external XPLM_DLL;
 
@@ -148,6 +172,7 @@ TYPE
     This routine returns a counter starting at zero for each sim cycle
     computed/video frame rendered.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMGetCycleNumber: Integer;
     cdecl; external XPLM_DLL;
 
@@ -165,10 +190,11 @@ TYPE
     (This legacy function only installs pre-flight-loop callbacks; use
     XPLMCreateFlightLoop for more control.)
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMRegisterFlightLoopCallback(
                                         inFlightLoop        : XPLMFlightLoop_f;
                                         inInterval          : Single;
-                                        inRefcon            : pointer);
+                                        inRefcon            : pointer);    { Can be nil }
     cdecl; external XPLM_DLL;
 
    {
@@ -181,9 +207,10 @@ TYPE
     Only use this on flight loops registered via
     XPLMRegisterFlightLoopCallback.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMUnregisterFlightLoopCallback(
                                         inFlightLoop        : XPLMFlightLoop_f;
-                                        inRefcon            : pointer);
+                                        inRefcon            : pointer);    { Can be nil }
     cdecl; external XPLM_DLL;
 
    {
@@ -195,15 +222,16 @@ TYPE
     
     inInterval is formatted the same way as in XPLMRegisterFlightLoopCallback;
     positive for seconds, negative for cycles, and 0 for deactivating the
-    callback. If inRelativeToNow is 1, times are from the time of this call;
+    callback. If inRelativeToNow is true, times are from the time of this call;
     otherwise they are from the time the callback was last called (or the time
     it was registered if it has never been called.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMSetFlightLoopCallbackInterval(
                                         inFlightLoop        : XPLMFlightLoop_f;
                                         inInterval          : Single;
                                         inRelativeToNow     : Integer;
-                                        inRefcon            : pointer);
+                                        inRefcon            : pointer);    { Can be nil }
     cdecl; external XPLM_DLL;
 
 {$IFDEF XPLM210}
@@ -212,8 +240,9 @@ TYPE
     
     This routine creates a flight loop callback and returns its ID. The flight
     loop callback is created using the input param struct, and is inited to be
-    unscheduled.
+    unscheduled. Use XPLMScheduleFlightLoop to schedule it.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMCreateFlightLoop(
                                         inParams            : PXPLMCreateFlightLoop_t) : XPLMFlightLoopID;
     cdecl; external XPLM_DLL;
@@ -226,6 +255,7 @@ TYPE
     This routine destroys a flight loop callback by ID. Only call it on flight
     loops created with the newer XPLMCreateFlightLoop API.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDestroyFlightLoop(
                                         inFlightLoopID      : XPLMFlightLoopID);
     cdecl; external XPLM_DLL;
@@ -244,12 +274,32 @@ TYPE
     routine is called; otherwise they are relative to the last call time or the
     time the flight loop was registered (if never called).
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMScheduleFlightLoop(
                                         inFlightLoopID      : XPLMFlightLoopID;
                                         inInterval          : Single;
                                         inRelativeToNow     : Integer);
     cdecl; external XPLM_DLL;
 {$ENDIF XPLM210}
+
+{___________________________________________________________________________
+ * XLUA TIMERS
+ ___________________________________________________________________________}
+
+
+
+
+
+
+
+
+{___________________________________________________________________________
+ * Host API
+ ___________________________________________________________________________}
+
+CONST
+   XPLMProcessingHostApiVersion = 0;
+
 
 
 IMPLEMENTATION

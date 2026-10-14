@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-if(APPLE)
-	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
-endif(APPLE)
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
 
 project("BetterMouseYoke")
 
@@ -13,8 +11,7 @@ endif()
 set(CMAKE_C_STANDARD 17)
 
 FILE(GLOB SRC 
-	${CMAKE_SOURCE_DIR}/BetterMouseYoke/detours.h
-	${CMAKE_SOURCE_DIR}/BetterMouseYoke/plugin.h	
+	${CMAKE_SOURCE_DIR}/BetterMouseYoke/plugin.h
 	${CMAKE_SOURCE_DIR}/BetterMouseYoke/plugin.c
 	${CMAKE_SOURCE_DIR}/Util/*.c
 	${CMAKE_SOURCE_DIR}/Util/*.h
@@ -53,17 +50,17 @@ else()
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
 endif()
 
-set(PLUGIN_VERSION "1.7")
+set(PLUGIN_VERSION "2.0")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPLUGIN_VERSION=\"\"${PLUGIN_VERSION}\"\"")
 
 set(XPSDK "${CMAKE_SOURCE_DIR}/SDK") 
 
-add_definitions(-DXPLM200=1 -DXPLM210=1 -DXPLM300=1 -DXPLM301=1 -DXPLM303=1 -DXPLM400=1)
+add_definitions(-DXPLM200=1 -DXPLM210=1 -DXPLM300=1 -DXPLM301=1 -DXPLM303=1 -DXPLM400=1 -DXPLM410=1 -DXPLM420=1)
 
 
 if(WIN32) 
-	add_definitions(-DIBM=1 -DAPL=0 -DLIN=0 -D_X86_)
+	add_definitions(-DIBM=1 -DAPL=0 -DLIN=0)
 elseif(APPLE)
 	add_definitions(-DIBM=0 -DAPL=1 -DLIN=0 -DGL_SILENCE_DEPRECATION)
 else()
@@ -87,20 +84,23 @@ include_directories(
 # linking
 
 if(WIN32)
-	find_library(XPLM_LIBRARY XPLM_64 "${XPSDK}/Libraries/Win")
+	find_library(XPLM_LIBRARY XPLM_64 PATHS "${XPSDK}/Libraries/Win"
+		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 elseif(APPLE)
-	find_library(XPLM_LIBRARY XPLM "${XPSDK}/Libraries/Mac")
+	find_library(XPLM_LIBRARY XPLM PATHS "${XPSDK}/Libraries/Mac"
+		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 else()
 	set(XPLM_LIBRARY "")
 endif()
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
 		${XPLM_LIBRARY}
-		"${CMAKE_SOURCE_DIR}/BetterMouseYoke/detours.lib"
     )
 
-if(UNIX AND NOT APPLE)
-	target_link_libraries(${CMAKE_PROJECT_NAME} X11 Xi Xcursor Xfixes)
+if(APPLE)
+	target_link_libraries(${CMAKE_PROJECT_NAME} "-framework ApplicationServices")
+elseif(UNIX)
+	target_link_libraries(${CMAKE_PROJECT_NAME} X11 Xi Xfixes)
 endif()
 
 if(UNIX AND NOT APPLE)
@@ -118,7 +118,6 @@ elseif(MSVC)
 else()
 
 endif()
-# /WHOLEARCHIVE:OPENGL32 /WHOLEARCHIVE:GLFW3 /NODEFAULTLIB:MSVCRT
 
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES PREFIX "")
 set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES SUFFIX "")

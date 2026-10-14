@@ -1,5 +1,5 @@
 {
-   Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+   Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
    rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
 }
 
@@ -9,6 +9,22 @@ INTERFACE
 USES
     XPLMDefs;
    {$A4}
+
+TYPE
+   XPLMChar   = AnsiChar;
+   XPLMString = PAnsiChar;
+   PXPLMString = ^XPLMString;
+
+CONST
+{$IFDEF MSWINDOWS}
+   XPWIDGETS_DLL = 'XPWidgets_64.dll';
+{$ENDIF}
+{$IFDEF DARWIN}
+   XPWIDGETS_DLL = 'XPWidgets.framework/XPWidgets';
+{$ENDIF}
+{$IFDEF LINUX}
+   XPWIDGETS_DLL = 'XPWidgets_64.so';
+{$ENDIF}
 {___________________________________________________________________________
  * WIDGET DEFINITIONS
  ___________________________________________________________________________}
@@ -410,16 +426,16 @@ TYPE
     This function defines your custom widget's behavior. It will be called by
     the widgets library to send messages to your widget. The message and widget
     ID are passed in, as well as two pointer-width signed parameters whose
-    meaning varies with the message. Return 1 to indicate that you have
-    processed the message, 0 to indicate that you have not. For any message
+    meaning varies with the message. Return true to indicate that you have
+    processed the message, false to indicate that you have not. For any message
     that is not understood, return 0.
    }
 TYPE
      XPWidgetFunc_t = FUNCTION(
                                     inMessage           : XPWidgetMessage;
                                     inWidget            : XPWidgetID;
-                                    inParam1            : intptr_t;
-                                    inParam2            : intptr_t) : Integer; cdecl;
+                                    inParam1            : NativeInt;
+                                    inParam2            : NativeInt) : Integer; cdecl;
 
 
 IMPLEMENTATION

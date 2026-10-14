@@ -1,5 +1,5 @@
 {
-   Copyright 2005-2022 Laminar Research, Sandy Barbour and Ben Supnik All
+   Copyright 2005-2026 Laminar Research, Sandy Barbour and Ben Supnik All
    rights reserved.  See license.txt for usage. X-Plane SDK Version: 4.0.0
 }
 
@@ -12,6 +12,22 @@ INTERFACE
 USES
     XPLMDefs;
    {$A4}
+
+TYPE
+   XPLMChar   = AnsiChar;
+   XPLMString = PAnsiChar;
+   PXPLMString = ^XPLMString;
+
+CONST
+{$IFDEF MSWINDOWS}
+   XPLM_DLL = 'XPLM_64.dll';
+{$ENDIF}
+{$IFDEF DARWIN}
+   XPLM_DLL = 'XPLM.framework/XPLM';
+{$ENDIF}
+{$IFDEF LINUX}
+   XPLM_DLL = 'XPLM_64.so';
+{$ENDIF}
 {$IFDEF XPLM200}
 {___________________________________________________________________________
  * Terrain Y-Testing
@@ -132,6 +148,7 @@ TYPE
     
     Creates a new probe object of a given type and returns.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMCreateProbe(
                                         inProbeType         : XPLMProbeType) : XPLMProbeRef;
     cdecl; external XPLM_DLL;
@@ -141,6 +158,7 @@ TYPE
     
     Deallocates an existing probe object.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDestroyProbe(
                                         inProbe             : XPLMProbeRef);
     cdecl; external XPLM_DLL;
@@ -153,6 +171,7 @@ TYPE
     properly. Other fields are filled in if we hit terrain, and a probe result
     is returned.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMProbeTerrainXYZ(
                                         inProbe             : XPLMProbeRef;
                                         inX                 : Single;
@@ -186,6 +205,7 @@ TYPE
     Returns X-Plane's simulated magnetic variation (declination) at the
     indication latitude and longitude.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMGetMagneticVariation(
                                         latitude            : Real;
                                         longitude           : Real) : Single;
@@ -197,6 +217,7 @@ TYPE
     Converts a heading in degrees relative to true north into a value relative
     to magnetic north at the user's current location.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMDegTrueToDegMagnetic(
                                         headingDegreesTrue  : Single) : Single;
     cdecl; external XPLM_DLL;
@@ -207,6 +228,7 @@ TYPE
     Converts a heading in degrees relative to magnetic north at the user's
     current location into a value relative to true north.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMDegMagneticToDegTrue(
                                         headingDegreesMagnetic: Single) : Single;
     cdecl; external XPLM_DLL;
@@ -262,6 +284,34 @@ TYPE
    PXPLMDrawInfo_t = ^XPLMDrawInfo_t;
 {$ENDIF XPLM200}
 
+{$IFDEF XPLM420}
+   {
+    XPLMDrawInfoDouble_t
+    
+    The XPLMDrawInfo_t structure contains positioning info for one object that
+    is to be drawn. Be sure to set structSize to the size of the structure for
+    future expansion.
+   }
+TYPE
+   XPLMDrawInfoDouble_t = RECORD
+     { Set this to the size of this structure!                                    }
+     structSize               : Integer;
+     { X location of the object in local coordinates.                             }
+     x                        : Real;
+     { Y location of the object in local coordinates.                             }
+     y                        : Real;
+     { Z location of the object in local coordinates.                             }
+     z                        : Real;
+     { Pitch in degres to rotate the object, positive is up.                      }
+     pitch                    : Real;
+     { Heading in local coordinates to rotate the object, clockwise.              }
+     heading                  : Real;
+     { Roll to rotate the object.                                                 }
+     roll                     : Real;
+   END;
+   PXPLMDrawInfoDouble_t = ^XPLMDrawInfoDouble_t;
+{$ENDIF XPLM420}
+
 {$IFDEF XPLM210}
    {
     XPLMObjectLoaded_f
@@ -269,7 +319,7 @@ TYPE
     You provide this callback when loading an object asynchronously; it will be
     called once the object is loaded. Your refcon is passed back. The object
     ref passed in is the newly loaded object (ready for use) or NULL if an
-    error occured.
+    error occured. It will not be called more than once per object.
     
     If your plugin is disabled, this callback will be delivered as soon as the
     plugin is re-enabled. If your plugin is unloaded before this callback is
@@ -278,7 +328,7 @@ TYPE
 TYPE
      XPLMObjectLoaded_f = PROCEDURE(
                                     inObject            : XPLMObjectRef;
-                                    inRefcon            : pointer); cdecl;
+                                    inRefcon            : pointer); cdecl;    { Can be nil }
 {$ENDIF XPLM210}
 
 {$IFDEF XPLM200}
@@ -304,6 +354,7 @@ TYPE
     registered before you load the object. For this reason it may be necessary
     to defer object loading until the sim has fully started.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMLoadObject(
                                         inPath              : XPLMString) : XPLMObjectRef;
     cdecl; external XPLM_DLL;
@@ -326,10 +377,11 @@ TYPE
     the load to complete and then release the object if it is no longer
     desired.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMLoadObjectAsync(
                                         inPath              : XPLMString;
                                         inCallback          : XPLMObjectLoaded_f;
-                                        inRefcon            : pointer);
+                                        inRefcon            : pointer);    { Can be nil }
     cdecl; external XPLM_DLL;
 {$ENDIF XPLM210}
 
@@ -347,18 +399,20 @@ TYPE
     X-Plane will attempt to cull the objects based on LOD and visibility, and
     will pick the appropriate LOD.
     
-    Lighting is a boolean; pass 1 to show the night version of object with
-    night-only lights lit up. Pass 0 to show the daytime version of the object.
+    Lighting is a boolean; pass true to show the night version of object with
+    night-only lights lit up. Pass false to show the daytime version of the
+    object.
     
-    earth_relative controls the coordinate system. If this is 1, the rotations
-    you specify are applied to the object after its coordinate system is
-    transformed from local to earth-relative coordinates -- that is, an object
-    with no rotations will point toward true north and the Y axis will be up
-    against gravity. If this is 0, the object is drawn with your rotations from
-    local coordanates -- that is, an object with no rotations is drawn pointing
-    down the -Z axis and the Y axis of the object matches the local coordinate
-    Y axis.
+    earth_relative controls the coordinate system. If this is true, the
+    rotations you specify are applied to the object after its coordinate system
+    is transformed from local to earth-relative coordinates -- that is, an
+    object with no rotations will point toward true north and the Y axis will
+    be up against gravity. If this is false, the object is drawn with your
+    rotations from local coordanates -- that is, an object with no rotations is
+    drawn pointing down the -Z axis and the Y axis of the object matches the
+    local coordinate Y axis.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMDrawObjects(
                                         inObject            : XPLMObjectRef;
                                         inCount             : Integer;
@@ -377,6 +431,7 @@ TYPE
     purged from memory. Make sure to call XPLMUnloadObject once for each
     successful call to XPLMLoadObject.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    PROCEDURE XPLMUnloadObject(
                                         inObject            : XPLMObjectRef);
     cdecl; external XPLM_DLL;
@@ -404,7 +459,7 @@ TYPE
 TYPE
      XPLMLibraryEnumerator_f = PROCEDURE(
                                     inFilePath          : XPLMString;
-                                    inRef               : pointer); cdecl;
+                                    inRef               : pointer); cdecl;    { Can be nil }
 
    {
     XPLMLookupObjects
@@ -418,16 +473,39 @@ TYPE
     be used. The library system allows for scenery packages to only provide
     objects to certain local locations. Only objects that are allowed at the
     latitude/longitude you provide will be returned.
+    
+    The enumerator is fully synchronous: it is called once per matching object,
+    and all calls complete before XPLMLookupObjects returns.
    }
+    { NOT thread-safe. Use ONLY from the main thread, in callbacks.                 }
    FUNCTION XPLMLookupObjects(
                                         inPath              : XPLMString;
                                         inLatitude          : Single;
                                         inLongitude         : Single;
                                         enumerator          : XPLMLibraryEnumerator_f;
-                                        ref                 : pointer) : Integer;
+                                        ref                 : pointer) : Integer;    { Can be nil }
     cdecl; external XPLM_DLL;
 
 {$ENDIF XPLM200}
+{___________________________________________________________________________
+ * Host API's
+ ___________________________________________________________________________}
+
+CONST
+   XPLMSceneryHostApiVersion = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 IMPLEMENTATION
 

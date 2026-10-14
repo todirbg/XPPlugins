@@ -18,13 +18,18 @@
 
 #define RUDDER_DEFL_DIST    200
 #define RUDDER_RET_SPEED    2.0f
+#define LOOK_SENSITIVITY    0.2f
 
 static XPLMCommandRef toggle_yoke_control;
 static XPLMDataRef yoke_pitch_ratio;
 static XPLMDataRef yoke_roll_ratio;
 static XPLMDataRef yoke_heading_ratio;
 static XPLMDataRef eq_pfc_yoke;
+static XPLMDataRef head_psi;
+static XPLMDataRef head_the;
+static XPLMDataRef view_is_external;
 static XPLMFlightLoopID loop_id;
+static XPLMWindowID cursor_win;
 static int screen_width;
 static int screen_height;
 static int yoke_control_enabled;
@@ -39,20 +44,20 @@ static int rudder_return;
 static int rudder_defl_dist;
 static float yaw_ratio;
 static float rudder_ret_spd;
+static int look_control;
+static int right_click_passed;
+static int look_pos[2];
+static float look_start[2];
+static float look_sens;
+static cursor_t current_cursor = CURSOR_ARROW;
+static int builtin_cursors;
 #if IBM
 static HWND xp_hwnd;
-static HCURSOR yoke_cursor;
-static HCURSOR rudder_cursor;
-static HCURSOR arrow_cursor;
-static HCURSOR(WINAPI *true_set_cursor) (HCURSOR cursor) = SetCursor;
 #elif LIN
     Display *dpy;
     XEvent ev;
     XIEvent *xi_event;
     XIRawEvent *xev;
-    Cursor cross;
-    Cursor arrows;
-    Cursor def;
     Window window;
 #endif
 
@@ -71,60 +76,35 @@ PLUGIN_API int XPluginStart(char *name, char *sig, char *desc) {
     toggle_yoke_control = XPLMCreateCommand("BetterMouseYoke/ToggleYokeControl",
         "Toggle mouse yoke control");
     yoke_pitch_ratio = XPLMFindDataRef("sim/cockpit2/controls/yoke_pitch_ratio");
-    if (yoke_pitch_ratio == NULL) {
-        _log("init fail: could not find yoke_pitch_ratio dataref");
-        return 0;
-    }
     yoke_roll_ratio = XPLMFindDataRef("sim/cockpit2/controls/yoke_roll_ratio");
-    if (yoke_roll_ratio == NULL) {
-        _log("init fail: could not find yoke_roll_ratio dataref");
-        return 0;
-    }
-    yoke_heading_ratio = XPLMFindDataRef(
-        "sim/cockpit2/controls/yoke_heading_ratio");
-    if (yoke_heading_ratio == NULL) {
-        _log("init fail: could not find yoke_heading_ratio dataref");
-        return 0;
-    }
+    yoke_heading_ratio = XPLMFindDataRef("sim/cockpit2/controls/yoke_heading_ratio");
     eq_pfc_yoke = XPLMFindDataRef("sim/joystick/eq_pfc_yoke");
-    if (eq_pfc_yoke == NULL) {
-        _log("init fail: could not find eq_pfc_yoke dataref");
-        return 0;
-    }
+    head_psi = XPLMFindDataRef("sim/graphics/view/pilots_head_psi");
+    head_the = XPLMFindDataRef("sim/graphics/view/pilots_head_the");
+    view_is_external = XPLMFindDataRef("sim/graphics/view/view_is_external");
     XPLMDataRef has_joystick = XPLMFindDataRef("sim/joystick/has_joystick");
     if (XPLMGetDatai(has_joystick)) {
         _log("init: joystick detected, unloading plugin");
         return 0;
     }
+    write_default_settings();
     if (!init_menu()) {
         _log("init: could not init menu");
         return 0;
     }
     rudder_defl_dist = ini_geti("rudder_deflection_distance", RUDDER_DEFL_DIST);
     rudder_ret_spd = ini_getf("rudder_return_speed", RUDDER_RET_SPEED);
+    look_sens = ini_getf("look_sensitivity", LOOK_SENSITIVITY);
+    int xp_ver, xplm_ver;
+    XPLMHostApplicationID host_id;
+    XPLMGetVersions(&xp_ver, &xplm_ver, &host_id);
+    builtin_cursors = xplm_ver >= 420;
+    if (!builtin_cursors)
+        _log("init: cursor icons need X-Plane 12.3 or newer");
 #if IBM
     xp_hwnd = FindWindowA("X-Plane", "X-Plane");
     if (!xp_hwnd) {
         _log("could not find X-Plane 11 window");
-        return 0;
-    }
-    if (!hook_set_cursor(1)) {
-        _log("could not hook SetCursor function");
-        return 0;
-    }
-    yoke_cursor = LoadCursor(NULL, IDC_SIZEALL);
-    if (!yoke_cursor) {
-        _log("could not load yoke_cursor");
-        return 0;
-    }
-    rudder_cursor = LoadCursor(NULL, IDC_SIZEWE);
-    if (!rudder_cursor) {
-        _log("could not load rudder_cursor");
-        return 0;
-    }
-    arrow_cursor = LoadCursor(NULL, IDC_ARROW);
-    if (!arrow_cursor) {
-        _log("could not load arrow_cursor");
         return 0;
     }
 #elif LIN
@@ -145,10 +125,6 @@ int xi_opcode, event, error;
     if (!has_xi2(dpy))
     return 0;
 
-    def = XcursorLibraryLoadCursor(dpy, "left_ptr");
-    cross = XcursorLibraryLoadCursor(dpy, "cross");
-    arrows = XcursorLibraryLoadCursor(dpy, "sb_h_double_arrow");
-
 #endif
     return 1;
 }
@@ -159,16 +135,7 @@ int xi_opcode, event, error;
  * Called when the plugin is about to be unloaded from X-Plane 11.
  */
 PLUGIN_API void XPluginStop(void) {
-#if IBM
-    if (!hook_set_cursor(0)) {
-        _log("could not unhook SetCursor function");
-    }
-#elif LIN
-    XDefineCursor(dpy, window, def);
-    XFreeCursor(dpy, cross);
-    XFreeCursor(dpy, arrows);
-    XFreeCursor(dpy, def);
-    XFlush(dpy);
+#if LIN
     XCloseDisplay(dpy);
 #endif
 }
@@ -190,6 +157,27 @@ PLUGIN_API int XPluginEnable(void) {
         .callbackFunc = loop_cb
     };
     loop_id = XPLMCreateFlightLoop(&params);
+    /* Invisible window that covers the screen while mouse yoke control is
+       enabled. It picks the cursor X-Plane shows and swallows mouse clicks
+       so we can use the right button for looking around. */
+    XPLMCreateWindow_t win = {
+        .structSize = sizeof(XPLMCreateWindow_t),
+        .visible = 0,
+        .drawWindowFunc = win_draw_cb,
+        .handleMouseClickFunc = win_click_cb,
+        .handleKeyFunc = win_key_cb,
+        .handleCursorFunc = win_cursor_cb,
+        .handleMouseWheelFunc = win_wheel_cb,
+        .refcon = NULL,
+        .decorateAsFloatingWindow = xplm_WindowDecorationNone,
+        .layer = xplm_WindowLayerFlightOverlay,
+        .handleRightClickFunc = win_right_click_cb
+    };
+    cursor_win = XPLMCreateWindowEx(&win);
+    if (!cursor_win) {
+        _log("could not create cursor window");
+        return 0;
+    }
     return 1;
 }
 
@@ -206,11 +194,10 @@ PLUGIN_API void XPluginDisable(void) {
     if (loop_id)
         XPLMDestroyFlightLoop(loop_id);
     loop_id = NULL;
+    if (cursor_win)
+        XPLMDestroyWindow(cursor_win);
+    cursor_win = NULL;
     menu_deinit();
-#if LIN
-    XDefineCursor(dpy, window, def);
-    XFlush(dpy);
-#endif // LIN
 }
 
 /**
@@ -229,6 +216,50 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID from, int msg, void *param) {
             XPLMSetDatai(eq_pfc_yoke, 1);
         }
     }
+}
+
+void write_default_settings() {
+    /* Gives users a settings.ini with all options to edit, if there's none
+       yet. The values match the defaults used when an option is missing. */
+    char buf[4096];
+    snprintf(buf, sizeof(buf),
+        "; BetterMouseYoke settings. Lines starting with ; are comments.\n"
+        "; Remove a line to use the default value.\n"
+        "[settings]\n"
+        "\n"
+        "; When entering mouse yoke mode, move the mouse cursor to match the\n"
+        "; current yoke deflection to avoid sudden control movements.\n"
+        "; Set to 0 to disable.\n"
+        "set_pos = 1\n"
+        "\n"
+        "; When entering rudder mode, move the mouse cursor to match the current\n"
+        "; rudder deflection. Set to 0 to disable.\n"
+        "set_rudder_pos = 1\n"
+        "\n"
+        "; Change the mouse cursor symbol in yoke and rudder mode (requires\n"
+        "; X-Plane 12.3 or newer). Set to 0 to disable.\n"
+        "change_cursor = 1\n"
+        "\n"
+        "; Gradually return the rudder to neutral after leaving rudder mode.\n"
+        "; Set to 0 to disable.\n"
+        "rudder_return = 1\n"
+        "\n"
+        "; The speed (in units per second) with which the rudder returns to\n"
+        "; neutral. A value of 2 takes half a second from full deflection.\n"
+        "rudder_return_speed = %g\n"
+        "\n"
+        "; The mouse movement range for full rudder deflection in rudder mode,\n"
+        "; i.e. the distance between the two green bars on the screen.\n"
+        "rudder_deflection_distance = %d\n"
+        "\n"
+        "; How many degrees the view turns per pixel of mouse movement when\n"
+        "; looking around with the right mouse button.\n"
+        "look_sensitivity = %g\n"
+        "\n"
+        "; Write extra debug messages to X-Plane's Log.txt. Set to 1 to enable.\n"
+        "debug = 0\n",
+        RUDDER_RET_SPEED, RUDDER_DEFL_DIST, LOOK_SENSITIVITY);
+    ini_write_default(buf);
 }
 
 int init_menu() {
@@ -251,6 +282,8 @@ int toggle_yoke_control_cb(XPLMCommandRef cmd, XPLMCommandPhase phase, void *ref
             set_cursor_bmp(CURSOR_ARROW);
         yoke_control_enabled = 0;
         rudder_control = 0;
+        look_control = 0;
+        XPLMSetWindowIsVisible(cursor_win, 0);
 #if LIN
     deselect_events(dpy, window);
 #endif // LIN
@@ -265,10 +298,14 @@ int toggle_yoke_control_cb(XPLMCommandRef cmd, XPLMCommandPhase phase, void *ref
         _log("screen_width %d", screen_width);
         _log("screen_height %d", screen_height);
         /* Set cursor position to align with current deflection of yoke. */
-        //if (set_pos)
+        if (set_pos)
             set_cursor_from_yoke();
         //if (change_cursor)
-            set_cursor_bmp(CURSOR_YOKE);
+        set_cursor_bmp(CURSOR_YOKE);
+        int left, top, right, bottom;
+        XPLMGetScreenBoundsGlobal(&left, &top, &right, &bottom);
+        XPLMSetWindowGeometry(cursor_win, left, top, right, bottom);
+        XPLMSetWindowIsVisible(cursor_win, 1);
         yoke_control_enabled = 1;
         XPLMScheduleFlightLoop(loop_id, -1.0f, 0);
     }
@@ -278,7 +315,8 @@ int toggle_yoke_control_cb(XPLMCommandRef cmd, XPLMCommandPhase phase, void *ref
 int draw_cb(XPLMDrawingPhase phase, int before, void *ref) {
     /* Show a little text indication in top left corner of screen. */
     if (yoke_control_enabled) {
-        XPLMDrawString(magenta, 20, screen_height - 40, rudder_control ?
+        XPLMDrawString(magenta, 20, screen_height - 40, look_control ?
+            "MOUSE LOOK" : rudder_control ?
             "MOUSE RUDDER CONTROL" : "MOUSE YOKE CONTROL",
             NULL, xplmFont_Proportional);
         if (rudder_control) {
@@ -312,6 +350,11 @@ float loop_cb(float last_call, float last_loop, int count, void *ref) {
         /* Don't call us anymore. */
         return 0;
     }
+    /* Yoke and rudder stay where they are while looking around. */
+    if (look_control) {
+        update_look();
+        return -1.0f;
+    }
     int m_x, m_y;
     get_cursor_pos(&m_x, &m_y);
     if (controlling_rudder(&m_x, &m_y)) {
@@ -338,6 +381,25 @@ float loop_cb(float last_call, float last_loop, int count, void *ref) {
     }
     /* Call us again next frame. */
     return -1.0f;
+}
+
+void update_look() {
+    /* Outside views have no pilot's head to turn, and writing its datarefs
+       switches back to the cockpit. So stop looking if the user switched to
+       an outside view meanwhile. */
+    if (XPLMGetDatai(view_is_external)) {
+        set_cursor_pos(look_pos[0], look_pos[1]);
+        look_control = 0;
+        return;
+    }
+    int m_x, m_y;
+    get_cursor_pos(&m_x, &m_y);
+    /* Turn the pilot's head relative to where it was when the right mouse
+       button went down. Pitch is clamped so the view can't flip over. */
+    float psi = look_start[0] + (m_x - look_pos[0]) * look_sens;
+    float the = look_start[1] + (m_y - look_pos[1]) * look_sens;
+    XPLMSetDataf(head_psi, psi);
+    XPLMSetDataf(head_the, min(max(the, -89.0f), 89.0f));
 }
 
 int left_mouse_down() {
@@ -466,76 +528,77 @@ void set_cursor_pos(int x, int y) {
 }
 
 void set_cursor_bmp(cursor_t cursor) {
-#if IBM
-    HCURSOR c = arrow_cursor;
-    switch (cursor) {
-    case CURSOR_YOKE:
-        c = yoke_cursor;
-        break;
-    case CURSOR_RUDDER:
-        c = rudder_cursor;
-        break;
-    }
-    true_set_cursor(c);
-#elif APL
-    /* TODO */
-    /* Can probably use NSCursor::set for this but not sure we can hook
-       that under OSX to prevent XP from constantly overriding our cursor...*/
-#elif LIN
- /*TODO*/
- /*Use custom png cursors*/
-    Cursor c = def;
-    switch (cursor) {
-    case CURSOR_YOKE:
-        c = cross;
-        break;
-    case CURSOR_RUDDER:
-        c = arrows;
-        break;
-    case CURSOR_ARROW:
-        c = def;
-        break;
-    }
-    XDefineCursor(dpy, window, c);
-    XFlush(dpy);
-#endif
+    /* X-Plane picks up the change via win_cursor_cb. */
+    current_cursor = cursor;
 }
 
-#if IBM
-HCURSOR WINAPI set_cursor(HCURSOR cursor) {
-    if (!yoke_control_enabled)
-        return true_set_cursor(cursor);
-    return cursor;
+void win_draw_cb(XPLMWindowID id, void *ref) {
+    /* Nothing to draw, the window is invisible. */
 }
 
-int hook_set_cursor(int attach) {
-    long err;
-    if ((err = DetourTransactionBegin())) {
-        _log("DetourTransactionBegin error (%i)", err);
-        return 0;
-    }
-    if ((err = DetourUpdateThread(GetCurrentThread()))) {
-        _log("DetourUpdateThread error (%i)", err);
-        return 0;
-    }
-    if (attach) {
-        if ((err = DetourAttach((void**)&true_set_cursor, set_cursor))) {
-            _log("DetourAttach error (%i)", err);
+int win_click_cb(XPLMWindowID id, int x, int y, XPLMMouseStatus status,
+    void *ref) {
+    /* Make sure keystrokes keep going to X-Plane. */
+    if (XPLMHasKeyboardFocus(id))
+        XPLMTakeKeyboardFocus(0);
+    /* Swallow left clicks. Rudder control reads the button state directly
+       (see left_mouse_down), and the SDK warns against passing clicks
+       through windows. */
+    return 1;
+}
+
+int win_right_click_cb(XPLMWindowID id, int x, int y, XPLMMouseStatus status,
+    void *ref) {
+    if (XPLMHasKeyboardFocus(id))
+        XPLMTakeKeyboardFocus(0);
+    if (status == xplm_MouseDown) {
+        /* There's no pilot's head to turn in outside views, so pass the
+           click on to X-Plane, where right-drag moves the camera. */
+        right_click_passed = XPLMGetDatai(view_is_external);
+        if (right_click_passed)
             return 0;
-        }
-    } else {
-        if ((err = DetourDetach((void**)&true_set_cursor, set_cursor))) {
-            _log("DetourDetach error (%i)", err);
-            return 0;
-        }
-    }
-    if ((err = DetourTransactionCommit())) {
-        _log("DetourTransactionCommit error (%i)", err);
+        /* Remember cursor position and head angles to look relative to. */
+        get_cursor_pos(look_pos, look_pos + 1);
+        look_start[0] = XPLMGetDataf(head_psi);
+        look_start[1] = XPLMGetDataf(head_the);
+        look_control = 1;
+    } else if (right_click_passed) {
+        /* Keep passing on the rest of a click X-Plane got. */
         return 0;
+    } else if (status == xplm_MouseUp && look_control) {
+        /* Put the cursor back so the yoke continues where it was. */
+        set_cursor_pos(look_pos[0], look_pos[1]);
+        look_control = 0;
     }
     return 1;
 }
-#elif LIN
+
+void win_key_cb(XPLMWindowID id, char key, XPLMKeyFlags flags, char vkey,
+    void *ref, int losing_focus) {
+}
+
+XPLMCursorStatus win_cursor_cb(XPLMWindowID id, int x, int y, void *ref) {
+    /* The built-in cursors need X-Plane 12.3 or newer. Older versions
+       don't know them, so stick with the arrow there. */
+    if (!builtin_cursors)
+        return xplm_CursorArrow;
+    switch (current_cursor) {
+    case CURSOR_YOKE:
+        return xplm_CursorFourArrows;
+    case CURSOR_RUDDER:
+        return xplm_CursorLeftRight;
+    default:
+        return xplm_CursorArrow;
+    }
+}
+
+int win_wheel_cb(XPLMWindowID id, int x, int y, int wheel, int clicks,
+    void *ref) {
+    /* Pass the mouse wheel on to X-Plane so cockpit knobs still work. */
+    return 0;
+}
+
+#if LIN
 
 static int has_xi2(Display *dpy)
 {

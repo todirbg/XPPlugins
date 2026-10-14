@@ -1,3 +1,0 @@
-/mnt/Shared/X-Plane/XPPlugins/build/CMakeFiles/BetterMouseYoke.dir
-/mnt/Shared/X-Plane/XPPlugins/build/CMakeFiles/edit_cache.dir
-/mnt/Shared/X-Plane/XPPlugins/build/CMakeFiles/rebuild_cache.dir

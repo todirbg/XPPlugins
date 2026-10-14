@@ -1,8 +1,0 @@
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/plugin.obj
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/cmd.obj
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/dllmain.obj
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/ini.obj
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/log.obj
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/menu.obj
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/path.obj
-D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/RelWithDebInfo/time.obj

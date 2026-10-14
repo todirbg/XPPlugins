@@ -5,7 +5,7 @@
  * dealing with configuration files. Linked against by most plugins in the
  * solution.
  *
- * Copyright 2019 Torben Könke.
+ * Copyright 2019 Torben Kï¿½nke.
  */
 #include "util.h"
 
@@ -25,7 +25,7 @@ static char *ini_get_path() {
 }
 
 int ini_geti(const char *name, int def) {
-#ifdef IBM
+#if IBM
     return GetPrivateProfileIntA(INI_SECT_NAME, name, def,
         ini_get_path());
 #else
@@ -38,12 +38,14 @@ int ini_geti(const char *name, int def) {
 }
 
 int ini_seti(const char *name, int val) {
+    
+#if IBM
     char *f = ini_get_path();
-#ifdef IBM
     char buf[32];
     snprintf(buf, sizeof(buf), "%i", val);
     return WritePrivateProfileStringA(INI_SECT_NAME, name, buf, f);
 #endif
+    return val;
 }
 
 float ini_getf(const char *name, float def) {
@@ -56,11 +58,12 @@ float ini_getf(const char *name, float def) {
 
 int ini_setf(const char *name, float val) {
 
+    return 1;
 }
 
 void ini_gets(const char *name, char *buf, int size, const char *def) {
     char *f = ini_get_path();
-#ifdef IBM
+#if IBM
     GetPrivateProfileStringA(INI_SECT_NAME, name, def, buf, size, f);
 #else
     FILE *fp = fopen(f, "r");
@@ -108,8 +111,10 @@ void ini_gets(const char *name, char *buf, int size, const char *def) {
 }
 
 int ini_sets(const char *name, const char *val) {
+    
+#if IBM
     char *f = ini_get_path();
-#ifdef IBM
     return WritePrivateProfileStringA(INI_SECT_NAME, name, val, f);
 #endif
+    return 0;
 }

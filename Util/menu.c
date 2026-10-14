@@ -5,7 +5,7 @@
  * dealing with configuration files. Linked against by most plugins in the
  * solution.
  *
- * Copyright 2019 Torben Könke.
+ * Copyright 2019 Torben Kï¿½nke.
  */
 #include "util.h"
 
@@ -13,7 +13,7 @@ static XPLMMenuID menu_id;
 static menu_item_t menu_items[MAX_MENU_ITEMS];
 
 static void menu_cb(void *menu_ref, void *item_ref) {
-    int index = (int)item_ref;
+    int index = (int)(intptr_t)item_ref;
     menu_item_t *item = &menu_items[index];
     XPLMMenuCheck check;
     XPLMCheckMenuItemState(menu_id, index, &check);
@@ -32,7 +32,8 @@ int menu_init(const char *name, menu_item_t *items, int num) {
         return 0;
     memcpy(menu_items, items, num * sizeof(menu_item_t));
     for (int i = 0; i < num; i++) {
-        int index = XPLMAppendMenuItem(menu_id, menu_items[i].name, i, 0);
+        int index = XPLMAppendMenuItem(menu_id, menu_items[i].name,
+            (void *)(intptr_t)i, 0);
         if (index < 0)
             return 0;
         int val = menu_items[i].value;

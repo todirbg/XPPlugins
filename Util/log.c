@@ -5,7 +5,7 @@
  * dealing with configuration files. Linked against by most plugins in the
  * solution.
  *
- * Copyright 2019 Torben Könke.
+ * Copyright 2019 Torben Kï¿½nke.
  */
 #include "util.h"
 
@@ -20,7 +20,7 @@ static const char *get_name() {
 }
 
 void _log(const char *fmt, ...) {
-    char buf[2048], out[2048];
+    char buf[2048], out[2054];
     va_list args;
     va_start(args, fmt);
     vsprintf(buf, fmt, args);
@@ -34,7 +34,7 @@ void _debug(const char *fmt, ...) {
         debug_enabled = ini_geti("debug", 0);
     if (!debug_enabled)
         return;
-    char buf[2048], out[2048];
+    char buf[2048], out[2062];
     va_list args;
     va_start(args, fmt);
     vsprintf(buf, fmt, args);

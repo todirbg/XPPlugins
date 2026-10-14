@@ -1,0 +1,22 @@
+# ninja log v6
+2	11	1791997245789496600	CMakeFiles/BetterMouseYoke.dir/BetterMouseYoke/plugin.c.o	3ccc1bf5139d996
+3	9	1791997245790598300	CMakeFiles/BetterMouseYoke.dir/Util/menu.c.o	ac45d5fe25401866
+11	39	1791997245798855400	/mnt/Shared/X-Plane/XPPlugins/Deploy/BetterMouseYoke/64/lin.xpl	508f2009f8286c6b
+3	9	1791997245790403400	CMakeFiles/BetterMouseYoke.dir/Util/log.c.o	4590bbba2be9b04d
+3	10	1791997245790746300	CMakeFiles/BetterMouseYoke.dir/Util/path.c.o	e7efee4539817f6a
+3	11	1791997245790233100	CMakeFiles/BetterMouseYoke.dir/Util/ini.c.o	1cd61165506b4618
+2	9	1791997245789851800	CMakeFiles/BetterMouseYoke.dir/Util/cmd.c.o	bb46c8d40704d89a
+4	10	1791997245791037900	CMakeFiles/BetterMouseYoke.dir/Util/time.c.o	22533d9a5028c326
+3	8	1791997245790052500	CMakeFiles/BetterMouseYoke.dir/Util/dllmain.c.o	80da81b288fbe6bb
+2	6	1791997245722164900	clean	eee472499eb9f57e
+1	32	1791997877131667100	build.ninja	83b2989d222bf178
+1	5	1791997882604495400	clean	eee472499eb9f57e
+3	7	1791997882680861100	CMakeFiles/BetterMouseYoke.dir/Util/dllmain.c.o	80da81b288fbe6bb
+3	88	1791997882680622400	CMakeFiles/BetterMouseYoke.dir/Util/cmd.c.o	bb46c8d40704d89a
+4	89	1791997882681319000	CMakeFiles/BetterMouseYoke.dir/Util/log.c.o	4590bbba2be9b04d
+5	92	1791997882682062500	CMakeFiles/BetterMouseYoke.dir/Util/time.c.o	22533d9a5028c326
+4	94	1791997882681596400	CMakeFiles/BetterMouseYoke.dir/Util/menu.c.o	ac45d5fe25401866
+4	94	1791997882681795000	CMakeFiles/BetterMouseYoke.dir/Util/path.c.o	e7efee4539817f6a
+4	105	1791997882681100300	CMakeFiles/BetterMouseYoke.dir/Util/ini.c.o	1cd61165506b4618
+3	122	1791997882680294100	CMakeFiles/BetterMouseYoke.dir/BetterMouseYoke/plugin.c.o	3ccc1bf5139d996
+122	144	1791997882799980300	/mnt/Shared/X-Plane/XPPlugins/Deploy/BetterMouseYoke/64/lin.xpl	508f2009f8286c6b

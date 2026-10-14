@@ -1,0 +1,8 @@
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/plugin.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/cmd.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/dllmain.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/ini.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/log.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/menu.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/path.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/Debug/time.obj

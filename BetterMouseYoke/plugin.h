@@ -11,13 +11,14 @@
 #define _PLUGIN_H_
 
 #include "../Util/util.h"
-#include "../XP/XPLMDisplay.h"
-#include "../XP/XPLMGraphics.h"
-#include "../XP/XPLMProcessing.h"
+#include "XPLMDisplay.h"
+#include "XPLMGraphics.h"
+#include "XPLMProcessing.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#ifdef IBM
+#include <stdint.h>
+#if IBM
 #pragma comment(lib, "detours.lib")
 #include "detours.h"
 int hook_set_cursor(int attach);
@@ -25,6 +26,7 @@ int hook_set_cursor(int attach);
 #include <X11/Xlib.h>
 #include <X11/extensions/XInput2.h>
 #include <X11/Xcursor/Xcursor.h>
+#include <X11/extensions/Xfixes.h>
 #endif
 
 
@@ -44,7 +46,7 @@ void set_cursor_pos(int x, int y);
 void set_cursor_bmp(cursor_t cursor);
 int controlling_rudder(int *x, int *y);
 
-#ifdef LIN
+#if LIN
 static int has_xi2(Display *dpy);
 static void select_events(Display *dpy, Window win);
 static void deselect_events(Display *dpy, Window win);

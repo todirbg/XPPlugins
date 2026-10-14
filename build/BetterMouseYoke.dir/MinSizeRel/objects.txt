@@ -1,0 +1,8 @@
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/plugin.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/cmd.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/dllmain.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/ini.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/log.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/menu.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/path.obj
+D:/X-Plane/XPPlugins/build/BetterMouseYoke.dir/MinSizeRel/time.obj

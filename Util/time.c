@@ -5,12 +5,13 @@
  * dealing with configuration files. Linked against by most plugins in the
  * solution.
  *
- * Copyright 2019 Torben Könke.
+ * Copyright 2019 Torben Kï¿½nke.
  */
 #include "util.h"
+#include <sys/time.h>
 
 long long get_time_ms() {
-#ifdef IBM
+#if IBM
     static const __int64 EPOCH = ((__int64)116444736000000000ULL);
     SYSTEMTIME st;
     FILETIME ft;

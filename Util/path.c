@@ -5,7 +5,7 @@
  * dealing with configuration files. Linked against by most plugins in the
  * solution.
  *
- * Copyright 2019 Torben Könke.
+ * Copyright 2019 Torben Kï¿½nke.
  */
 #include "util.h"
 
@@ -40,10 +40,6 @@ int get_plugin_name(char *buf, int size) {
         return 0;
     *p = 0;
     return 1;
-}
-
-int get_acft_dir(char *buf, int size) {
-
 }
 
 int get_data_path(const char *file, char *buf, int size) {

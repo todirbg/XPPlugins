@@ -5,39 +5,35 @@
  * dealing with configuration files. Linked against by most plugins in the
  * solution.
  *
- * Copyright 2019 Torben Könke.
+ * Copyright 2019 Torben Kï¿½nke.
  */
 #ifndef _UTIL_H_
 #define _UTIL_H_
 
-#define XPLM200
-#define XPLM210
-#define XPLM300
-#ifdef _WIN32
-#ifndef _WIN64
-#error Only 64-Bit platforms are supported.
-#endif /* _WIN64 */
-#define _CRT_SECURE_NO_WARNINGS
-#define IBM 1
-#pragma comment(lib, "../XP/Libs/XPLM_64.lib")
+// #define XPLM200
+// #define XPLM210
+// #define XPLM300
+#ifdef WIN32
+    #define _CRT_SECURE_NO_WARNINGS
 #endif /* _WIN32 */
 
-#include "../XP/XPLMUtilities.h"
-#include "../XP/XPLMDataAccess.h"
-#include "../XP/XPLMPlugin.h"
-#include "../XP/XPLMPlanes.h"
-#include "../XP/XPLMMenus.h"
-#include "../FMOD/fmod.h"
+#include "XPLMUtilities.h"
+#include "XPLMDataAccess.h"
+#include "XPLMPlugin.h"
+#include "XPLMPlanes.h"
+#include "XPLMMenus.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdarg.h>
 #include <string.h>
-#ifndef _WIN32
-#include <sys/time.h>
+#include <stdlib.h>
+#include <stdint.h>
+#ifndef WIN32
+#include <time.h>
 #define _stricmp strcasecmp
 #endif /* _WIN32 */
-#ifdef APL
-#include <ApplicationServices/ApplicationServices.h>
+#if APL
+    #include <ApplicationServices/ApplicationServices.h>
 #endif
 #ifndef max
 #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -103,6 +99,7 @@ typedef struct {
     const char *ini_name;
     int *var;
     int value;
+    void *ref;
 } menu_item_t;
 int menu_init(const char *name, menu_item_t *items, int num);
 int menu_deinit();

@@ -14,7 +14,7 @@
 #define PLUGIN_DESCRIPTION  "Does away with X-Plane's idiotic centered little box " \
                             "for mouse steering that has caused much grieve and "   \
                             "countless loss of virtual lives."
-#define PLUGIN_VERSION      "1.5"
+//#define PLUGIN_VERSION      "1.6"
 
 #define RUDDER_DEFL_DIST    200
 #define RUDDER_RET_SPEED    2.0f
@@ -39,7 +39,7 @@ static int rudder_return;
 static int rudder_defl_dist;
 static float yaw_ratio;
 static float rudder_ret_spd;
-#ifdef IBM
+#if IBM
 static HWND xp_hwnd;
 static HCURSOR yoke_cursor;
 static HCURSOR rudder_cursor;
@@ -65,7 +65,7 @@ static HCURSOR(WINAPI *true_set_cursor) (HCURSOR cursor) = SetCursor;
  */
 PLUGIN_API int XPluginStart(char *name, char *sig, char *desc) {
     /* SDK docs state buffers are at least 256 bytes. */
-    sprintf(name, "%s (v%s)", PLUGIN_NAME, PLUGIN_VERSION);
+    sprintf(name, "%s (v%.2f)", PLUGIN_NAME, PLUGIN_VERSION);
     strcpy(sig, PLUGIN_SIG);
     strcpy(desc, PLUGIN_DESCRIPTION);
     toggle_yoke_control = XPLMCreateCommand("BetterMouseYoke/ToggleYokeControl",
@@ -102,8 +102,8 @@ PLUGIN_API int XPluginStart(char *name, char *sig, char *desc) {
     }
     rudder_defl_dist = ini_geti("rudder_deflection_distance", RUDDER_DEFL_DIST);
     rudder_ret_spd = ini_getf("rudder_return_speed", RUDDER_RET_SPEED);
-#ifdef IBM
-    xp_hwnd = FindWindowA("X-System", "X-System");
+#if IBM
+    xp_hwnd = FindWindowA("X-Plane", "X-Plane");
     if (!xp_hwnd) {
         _log("could not find X-Plane 11 window");
         return 0;
@@ -159,7 +159,7 @@ int xi_opcode, event, error;
  * Called when the plugin is about to be unloaded from X-Plane 11.
  */
 PLUGIN_API void XPluginStop(void) {
-#ifdef IBM
+#if IBM
     if (!hook_set_cursor(0)) {
         _log("could not unhook SetCursor function");
     }
@@ -207,7 +207,7 @@ PLUGIN_API void XPluginDisable(void) {
         XPLMDestroyFlightLoop(loop_id);
     loop_id = NULL;
     menu_deinit();
-#ifdef LIN
+#if LIN
     XDefineCursor(dpy, window, def);
     XFlush(dpy);
 #endif // LIN
@@ -222,7 +222,7 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID from, int msg, void *param) {
     if (from != XPLM_PLUGIN_XPLANE)
         return;
     if (msg == XPLM_MSG_PLANE_LOADED) {
-        int index = (int)param;
+        int index = (int)(intptr_t)param;
         /* user's plane */
         if (index == XPLM_USER_AIRCRAFT) {
             /* This will hide the clickable yoke control box. */
@@ -251,21 +251,23 @@ int toggle_yoke_control_cb(XPLMCommandRef cmd, XPLMCommandPhase phase, void *ref
             set_cursor_bmp(CURSOR_ARROW);
         yoke_control_enabled = 0;
         rudder_control = 0;
-#ifdef LIN
+#if LIN
     deselect_events(dpy, window);
 #endif // LIN
     } else {
-#ifdef LIN
+#if LIN
     select_events(dpy, window);
 #endif // LIN
         /* Fetch screen dimensions here because doing it from XPluginEnable
            give unrealiable results. Also the screen size may be changed by
            the user at any time. */
         XPLMGetScreenSize(&screen_width, &screen_height);
+        _log("screen_width %d", screen_width);
+        _log("screen_height %d", screen_height);
         /* Set cursor position to align with current deflection of yoke. */
-        if (set_pos)
+        //if (set_pos)
             set_cursor_from_yoke();
-        if (change_cursor)
+        //if (change_cursor)
             set_cursor_bmp(CURSOR_YOKE);
         yoke_control_enabled = 1;
         XPLMScheduleFlightLoop(loop_id, -1.0f, 0);
@@ -339,7 +341,7 @@ float loop_cb(float last_call, float last_loop, int count, void *ref) {
 }
 
 int left_mouse_down() {
-#ifdef IBM
+#if IBM
     /* Most significant bit is set if button is being held. */
     return GetAsyncKeyState(VK_LBUTTON) >> 15;
 #elif APL
@@ -385,7 +387,7 @@ int controlling_rudder(int *x, int *y) {
             if (change_cursor)
                 set_cursor_bmp(CURSOR_RUDDER);
             /* Remember current cursor position. */
-            XPLMGetMouseLocationGlobal(cursor_pos, cursor_pos + 1);
+            XPLMGetMouseLocation(cursor_pos, cursor_pos + 1);
             /* Set rudder cursor position, if enabled. */
             if (set_rudder_pos) {
                 *x = *x + yaw_ratio * rudder_defl_dist;
@@ -409,7 +411,7 @@ int controlling_rudder(int *x, int *y) {
 }
 
 void get_cursor_pos(int *x, int *y) {
-#ifdef APL
+#if APL
     /* On OSX, XPLMGetMouseLocationGlobal still returns old cursor location after
         setting its position for whatever reason, so we query the cursor position
         ourselves. */
@@ -419,7 +421,7 @@ void get_cursor_pos(int *x, int *y) {
     *x = pt.x;
     *y = screen_height - pt.y;
 #else
-    XPLMGetMouseLocationGlobal(x, y);
+    XPLMGetMouseLocation(x, y);
 #endif
 }
 
@@ -431,7 +433,7 @@ void set_cursor_from_yoke() {
 }
 
 void set_cursor_pos(int x, int y) {
-#ifdef IBM
+#if IBM
     POINT pt = {
         .x = x,
         /* On windows (0,0) is the upper-left corner. */
@@ -450,13 +452,21 @@ void set_cursor_pos(int x, int y) {
     CGEventPost(kCGHIDEventTap, ev);
     CFRelease(ev);
 #elif LIN
+    _log("Cursor x = %d", x);
+    _log("Cursor y = %d", screen_height - y);
+    /* Xwayland ignores pointer warps while the cursor is visible. Hiding it
+       around the warp makes Xwayland emulate the warp with a locked pointer
+       and a cursor position hint, which the compositor applies when the
+       cursor is shown again. On a plain X server this is harmless. */
+    XFixesHideCursor(dpy, window);
     XWarpPointer(dpy, None, window, 0, 0, 0, 0, x, screen_height - y);
+    XFixesShowCursor(dpy, window);
     XFlush(dpy);
 #endif
 }
 
 void set_cursor_bmp(cursor_t cursor) {
-#ifdef IBM
+#if IBM
     HCURSOR c = arrow_cursor;
     switch (cursor) {
     case CURSOR_YOKE:
@@ -491,7 +501,7 @@ void set_cursor_bmp(cursor_t cursor) {
 #endif
 }
 
-#ifdef IBM
+#if IBM
 HCURSOR WINAPI set_cursor(HCURSOR cursor) {
     if (!yoke_control_enabled)
         return true_set_cursor(cursor);
